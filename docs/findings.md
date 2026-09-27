@@ -8,11 +8,15 @@ file under `results/pregame/`; regenerate with the commands at the end.
 This fork's existing model (the baseline) was never an in-game model: it predicts from each team's
 **season-to-date averages**. So the question is not "can we convert in-game to pre-game" but
 "does **recent form (last N games) plus schedule context** beat season-to-date averages?".
-With a 20-game window, the pre-game model **ties** the baseline on leak-free test games. Adding
-a rolling scoring-margin feature puts it slightly ahead (0.6481 vs 0.6401 accuracy, 0.6852 vs
-0.6813 AUC), but the gain is **within noise** (95% CIs include 0). A 10-game window is
-significantly worse on AUC. We also found that the baseline's features **leak the outcome** in the
-2024-25 and 2025-26 seasons, which inflates its validation-split numbers.
+With a 20-game window, the pre-game model **ties** the baseline on leak-free test games. A 10-game
+window is significantly worse on AUC. A rolling scoring-margin feature, kept as an **ablation
+only**, puts the window-20 model slightly ahead (0.6481 vs 0.6401 accuracy, 0.6852 vs 0.6813 AUC),
+but the gain is **within noise** (95% CIs include 0).
+
+SHAP shows recent win-record features outranking all 11 box-score stats. This is the same pattern
+parent paper 2 reports: engineered context features rank above box-score stats. We also found that
+the baseline's features **leak the outcome** in the 2024-25 and 2025-26 seasons, which inflates its
+validation-split numbers.
 
 ## 1. What the repo's baseline actually is
 
@@ -43,10 +47,50 @@ before** it, within the same season. Unit tests check this, and they fail if lea
 | **Ablation only** | scoring margin (mean plus-minus over last N games), home − away |
 
 The 11-stat list is the final feature set in parent paper 1's SHAP model (PLOS ONE 2024, Table 10).
-Here they are used as rolling pre-game averages, the project's adaptation modelled on parent paper 2
-(Alves & Barbosa, Computation 2025). Check the exact correspondence against that paper before
-citing it. The scoring-margin feature is **not** in the official set; it is reported separately as
-an ablation.
+Here the stats are computed as rolling pre-game averages instead of in-game totals.
+
+### 2a. Decision: scoring margin is an ablation only
+
+The official pre-game feature set is the 11 stats plus the context features above. Rolling scoring
+margin is **not** part of it and is reported only as a labelled ablation (`pregame_margin` in
+`src/Pregame/train_xgb.py`). There are two reasons:
+
+1. **Its gain is small next to the window change.**
+   - On leak-free test games, going from a 10-game to a 20-game window adds +0.009 accuracy and
+     +0.015 AUC.
+   - Adding margin on top of window 20 adds only +0.005 accuracy and +0.008 AUC, and that gain is
+     not statistically distinguishable from zero.
+2. **It would break comparability with parent paper 1.** The point of using that paper's stated
+   11-stat list is that our SHAP rankings can be compared with its rankings stat for stat. Scoring
+   margin is not on that list.
+
+The ablation rows stay in every results table so the effect is visible, labelled as ablation.
+
+### 2b. Relation to parent paper 2 (Alves & Barbosa, Computation 2025)
+
+J. M. Alves and R. S. Barbosa, "Machine Learning for Basketball Game Outcomes: NBA and WNBA
+Leagues," *Computation* 13(10):230, 2025. The feature and SHAP details below are from the project
+team's reading of the paper.
+
+- **Same style of features.** Paper 2 builds pre-game features from:
+  - last-N-game rolling averages, with the window deliberately varied rather than fixed;
+  - rest days between matches;
+  - home/away status and next-opponent information;
+  - Elo ratings (starting at 1500, k between 16 and 32).
+
+  Like our feature set, it describes each team's recent form and schedule before tip-off. That
+  makes it a fair reference point for this project. Our window comparison (10 vs 20) is in the
+  same spirit as its varied window.
+- **Same SHAP pattern.** In paper 2's SHAP analysis, engineered context features (`home_next`,
+  `team_elo_5_y`, `team_elo`) ranked above every box-score stat in every model it tested. We see the
+  same structure: recent win-record features rank above all 11 box-score stats (§5).
+- **What is not claimed.** This is a structural parallel (engineered context > box score), not a
+  claim that the feature sets match.
+  - We use no Elo ratings and no next-opponent features.
+  - Our context features are rolling win %, venue-specific win % and rest days.
+  - Paper 2's data, seasons and evaluation protocol also differ from ours. Its abstract reports
+    65.50% accuracy for the NBA, which is in the same range as our 0.643–0.648 but not directly
+    comparable.
 
 ## 3. Results
 
@@ -99,9 +143,9 @@ intervals exclude 0.
 - **Window=10 is worse than the baseline.** Its AUC shortfall is statistically clear.
 - **Window=20 matches the baseline.** It is slightly better on accuracy and slightly worse on AUC,
   and neither difference is distinguishable from noise.
-- **Scoring margin helps a little.** It lifts window=20 by about +0.005 accuracy and +0.008 AUC on
-  leak-free games and moves it ahead of the baseline on every metric. The lead is not
-  statistically significant.
+- **Scoring margin (ablation only, §2a) helps a little.** It lifts window=20 by about +0.005
+  accuracy and +0.008 AUC on leak-free games and moves it ahead of the baseline on every metric.
+  The lead is not statistically significant.
 - **Margin is not the missing piece.** It narrows the gap to the baseline, but the gap was mostly
   window length (10 → 20) plus noise.
 - **Behind the full-split validation gap:** the baseline's large lead there (0.765 vs ~0.70 AUC)
@@ -124,36 +168,85 @@ values (0.769/0.846, 0.818/0.897, 0.902/0.964); those do not appear in the paper
 
 ## 5. SHAP: pre-game model vs parent paper 1
 
-From the previous check-in: window=10 model, test split, n = 3,390 (`results/pregame/shap_w10.md`,
-plots `shap_bar_w10.png`, `shap_beeswarm_w10.png`). SHAP has not yet been re-run for window=20.
+Both official pre-game models (11 stats + context, no scoring margin) were explained on the test
+split (n = 3,390), ranking features by mean |SHAP|. Window=20 is the primary model. The window=10
+results are from the previous check-in and unchanged. Files: `results/pregame/shap_w20.md` and
+`shap_w10.md`, with bar and beeswarm plots for each window.
 
-- **Recent form dominates.** Ranked by mean |SHAP|, the top five are the home team's home win %,
-  2P% diff, the away team's road win %, and each team's overall recent win %.
+### 5a. All features
+
+| Rank | Window=20 (primary) | Window=10 |
+|---|---|---|
+| 1 | win_pct_home | home_win_pct_at_home |
+| 2 | win_pct_away | 2P%_diff |
+| 3 | home_win_pct_at_home | away_win_pct_on_road |
+| 4 | away_win_pct_on_road | win_pct_home |
+| 5 | 2P%_diff | win_pct_away |
+| 6 | FG%_diff | FG%_diff |
+| 7 | DRB_diff | rest_days_away |
+| 8 | BLK_diff | DRB_diff |
+| 9 | TOV_diff | BLK_diff |
+| 10 | STL_diff | FT%_diff |
+| 11 | rest_days_away | STL_diff |
+| 12 | FT%_diff | TOV_diff |
+| 13 | 3P%_diff | 3P%_diff |
+| 14 | b2b_away | AST_diff |
+| 15 | PF_diff | ORB_diff |
+| 16 | AST_diff | PF_diff |
+| 17 | ORB_diff | rest_days_home |
+| 18 | rest_days_home | b2b_away |
+| 19 | b2b_home | b2b_home |
+
+- **Recent win record dominates in both windows.** At window=20 the four win-record features
+  (overall and venue-specific win %, for each team) take ranks 1–4, ahead of every box-score stat.
+  At window=10, 2P% diff splits them at #2.
+- **Win record's share grows with the window.** It is 58% of total |SHAP| at window=20, up from 50%
+  at window=10. The 11 box-score stats' share falls from 44% to 38%.
 - **Schedule effects point the right way but are small.** Short rest for the away team favors the
   home team. Back-to-back flags add little beyond rest days.
 
-Among the paper's 11 stats only:
+### 5b. The paper's 11 stats only, vs parent paper 1 (Table 10)
 
-| Rank | Pre-game (ours) | Paper H2 | Paper H3 | Paper full game |
-|---|---|---|---|---|
-| 1 | 2P% | FG% | FG% | FG% |
-| 2 | FG% | DRB | TOV | 3P% |
-| 3 | DRB | AST | 3P% | TOV |
-| 4 | BLK | TOV | DRB | DRB |
-| 5 | FT% | FT% | ORB | ORB |
-| 6 | STL | PF | FT% | PF |
-| 7 | TOV | STL | PF | FT% |
-| 8 | 3P% | 3P% | AST | 2P% |
-| 9 | AST | ORB | STL | AST |
-| 10 | ORB | 2P% | 2P% | STL |
-| 11 | PF | BLK | BLK | BLK |
+| Rank | Window=20 (primary) | Window=10 | Paper H2 | Paper H3 | Paper full game |
+|---|---|---|---|---|---|
+| 1 | 2P% | 2P% | FG% | FG% | FG% |
+| 2 | FG% | FG% | DRB | TOV | 3P% |
+| 3 | DRB | DRB | AST | 3P% | TOV |
+| 4 | BLK | BLK | TOV | DRB | DRB |
+| 5 | TOV | FT% | FT% | ORB | ORB |
+| 6 | STL | STL | PF | FT% | PF |
+| 7 | FT% | TOV | STL | PF | FT% |
+| 8 | 3P% | 3P% | 3P% | AST | 2P% |
+| 9 | PF | AST | ORB | STL | AST |
+| 10 | AST | ORB | 2P% | 2P% | STL |
+| 11 | ORB | PF | BLK | BLK | BLK |
 
+**Window=10 vs window=20: the ranking barely changes.**
+- Spearman rank correlation between the two windows is 0.92 over all 19 features and 0.94 over the
+  11 stats.
+- The top five features are the same set, and the top four box-score stats (2P%, FG%, DRB, BLK)
+  are identical and in the same order.
+- The only movement is within the win-record group and a few positions in the lower half (for
+  example TOV 7th → 5th and PF 11th → 9th among the 11 stats).
+
+**Our ranking vs parent paper 1:**
 - **What carries over:** shooting efficiency and defensive rebounding (FG%/2P%, DRB) stay near the
-  top, as in the paper.
-- **What doesn't:** blocks rise from last to 4th, and 3P% and TOV fall.
-- **Overall agreement is about zero.** Spearman rank correlation with the paper's order: H2 0.07,
-  H3 −0.06, full game −0.01. What drives winning within a game is not what best predicts a game
-  in advance.
+  top in both windows, as in the paper.
+- **What doesn't:** blocks rise from last to 4th in both windows, and 3P% falls to 8th.
+- **Overall agreement is about zero.** Spearman rank correlation with the paper's order:
+
+  | | H2 | H3 | Full game |
+  |---|---|---|---|
+  | Window=20 | 0.09 | 0.00 | 0.08 |
+  | Window=10 | 0.07 | −0.06 | −0.01 |
+
+  What drives winning within a game is not what best predicts a game in advance.
+
+### 5c. Link to parent paper 2
+
+Engineered context features outrank every box-score stat here, as they do in parent paper 2's
+SHAP analysis (§2b). This holds for both windows. The parallel is in structure: the two papers'
+specific context features differ.
 
 ## 6. Data provenance and housekeeping
 
@@ -169,11 +262,14 @@ Among the paper's 11 stats only:
 
 ## 7. Open decisions
 
-1. Whether to make the scoring-margin feature part of the official pre-game set (currently ablation only).
-2. How to present the baseline's validation numbers given the leakage. The options are to report
+Still open:
+1. How to present the baseline's validation numbers given the leakage. The options are to report
    leak-free test only (§3b), to regenerate 2024-26 rows of the dataset without the current game,
    or both.
-3. Whether to re-run SHAP on the window=20 model now that it is primary.
+
+Resolved:
+- **Scoring margin:** stays an ablation only, not part of the official feature set (§2a).
+- **SHAP for window=20:** done. The ranking is stable against window=10 (§5).
 
 ## Reproduce
 
@@ -184,7 +280,7 @@ python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w
+  .venv/bin/python -m src.Pregame.shap_analysis --window $w
 done
 .venv/bin/python -m src.Pregame.leakage_audit
-.venv/bin/python -m src.Pregame.shap_analysis --window 10
 ```
