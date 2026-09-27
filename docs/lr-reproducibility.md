@@ -38,7 +38,7 @@ Every run uses `--dataset dataset_2012-24_new` unless the row says otherwise.
 | `--seed 0` / `--seed 1` / `--seed 7` | 0.6349 / 0.6376 / 0.6369 | 0.6310 / 0.6306 / 0.6308 |
 | `--dataset dataset_2012-23` (sigmoid / isotonic / none) | 0.6148 / 0.6220 / 0.5811 | 0.6529 / 0.6782 / 0.6772 |
 | `--dataset dataset_2012-24` (sigmoid / isotonic / none) | 0.6127 / 0.6213 / 0.5763 | 0.6547 / 0.6827 / 0.6789 |
-| `--dataset dataset_2012-26` (sigmoid / isotonic) | 0.6889 / 0.6718 | 0.5829 / 0.5911 |
+| `--dataset dataset_2012-26` (sigmoid / isotonic), before the 2024-26 leakage fix | 0.6889 / 0.6718 | 0.5829 / 0.5911 |
 
 The last digit of log loss can wobble between runs (0.6303 vs 0.6304) because the `liblinear`
 solver used for L1 trials is not seeded.

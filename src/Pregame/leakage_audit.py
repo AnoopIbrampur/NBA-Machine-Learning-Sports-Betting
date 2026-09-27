@@ -2,9 +2,12 @@
 
 For each team's consecutive dataset rows, if the features exclude the game being predicted then
 W(next row) - W(this row) equals this game's result; if they include it, W(this row) - W(previous
-row) does. From 2024-25 on, dataset_2012-26 rows include the current game, so the baseline sees the
-outcome it predicts. This re-scores the models saved by train_xgb.py on leak-free and affected
-games separately; training data (2012-13 to 2021-22) is unaffected, so nothing is retrained.
+row) does. The 2024-25 and 2025-26 rows used to include the current game (a lost one-day offset
+in Get_Data.py) and were regenerated with the fix by scripts/regenerate_2024_26.py.
+
+The saved models are re-scored on test games from seasons that were never affected (a secondary
+check that does not depend on the fix) and on the regenerated seasons separately. Training data
+(2012-13 to 2021-22) was never affected, so nothing is retrained.
 """
 import argparse
 import json
@@ -19,6 +22,7 @@ from src.Pregame.paths import DATASET_DB, DATASET_TABLE, RESULTS_DIR, model_path
 from src.Pregame.train_xgb import TARGET, evaluate, load_games
 
 FEATURE_SETS = ["repo", "pregame", "pregame_margin"]
+REGENERATED_SEASONS = [2024, 2025]  # season start years rebuilt after the Get_Data fix
 BOOTSTRAP_SAMPLES = 2000
 LABELS = {"repo": "Repo season-to-date (baseline)", "pregame": "Pre-game + context",
           "pregame_margin": "Ablation: pre-game + context + margin"}
@@ -74,16 +78,20 @@ def main():
     results, lines, ci_lines = {}, [], []
     for window in args.windows:
         games, feature_columns = load_games(window)
-        leaky = season_start(games["Date"]).isin(leaky_seasons)
+        regenerated = season_start(games["Date"]).isin(REGENERATED_SEASONS)
         subsets = {
-            "test, leak-free seasons": (games["split"] == "test") & ~leaky,
-            "test, affected seasons": (games["split"] == "test") & leaky,
-            "validation (all affected)": (games["split"] == "validation") & leaky,
+            "test, never-affected seasons": (games["split"] == "test") & ~regenerated,
+            "test, regenerated seasons": (games["split"] == "test") & regenerated,
+            "validation (all regenerated)": (games["split"] == "validation") & regenerated,
         }
-        if ((games["split"] == "validation") & ~leaky).any():
-            raise ValueError("Validation has unaffected rows; update the subset definitions.")
+        if ((games["split"] == "validation") & ~regenerated).any():
+            raise ValueError("Validation has rows outside the regenerated seasons; update the subsets.")
         y = games[TARGET].astype(int).to_numpy()
-        clean_test = subsets["test, leak-free seasons"].to_numpy()
+        ci_subsets = {
+            "test, never-affected seasons": subsets["test, never-affected seasons"].to_numpy(),
+            "test (all)": (games["split"] == "test").to_numpy(),
+            "validation (all)": (games["split"] == "validation").to_numpy(),
+        }
         probas = {}
         for feature_set in FEATURE_SETS:
             booster = xgb.Booster()
@@ -96,10 +104,12 @@ def main():
                 results.setdefault(f"w{window}", {}).setdefault(feature_set, {})[subset] = m
                 lines.append(f"| {window} | {LABELS[feature_set]} | {subset} | {m['n']} | {m['accuracy']:.4f} | "
                              f"{m['auc']:.4f} | {m['log_loss']:.4f} | {m['brier']:.4f} |")
-            if feature_set != "repo":
-                cis = paired_bootstrap(y[clean_test], probas[feature_set][clean_test], probas["repo"][clean_test])
-                results[f"w{window}"][feature_set]["vs_baseline_leak_free_test"] = cis
-                ci_lines.append(f"| {window} | {LABELS[feature_set]} | "
+            if feature_set == "repo":
+                continue
+            for subset, mask in ci_subsets.items():
+                cis = paired_bootstrap(y[mask], probas[feature_set][mask], probas["repo"][mask])
+                results[f"w{window}"][feature_set].setdefault("vs_baseline", {})[subset] = cis
+                ci_lines.append(f"| {window} | {LABELS[feature_set]} | {subset} | "
                                 f"[{cis['accuracy_diff_ci'][0]:+.4f}, {cis['accuracy_diff_ci'][1]:+.4f}] | "
                                 f"[{cis['auc_diff_ci'][0]:+.4f}, {cis['auc_diff_ci'][1]:+.4f}] |")
 
@@ -111,15 +121,16 @@ def main():
         "# Leakage audit of the repo's season-to-date features", "",
         "Share of team rows consistent with features that exclude / include the game being predicted:", "",
         by_season.round(3).to_markdown(), "",
-        f"Affected seasons (features include the current game): {', '.join(f'{s}-{str(s + 1)[-2:]}' for s in leaky_seasons)}.",
+        "Seasons whose features include the current game: "
+        + (", ".join(f"{s}-{str(s + 1)[-2:]}" for s in leaky_seasons) or "none") + ".",
         "Only the baseline uses these features; the pre-game models are built from game logs.", "",
-        "## Saved models re-scored on leak-free vs affected games", "",
+        "## Saved models re-scored on never-affected vs regenerated seasons", "",
         "| Window | Model | Subset | n | Accuracy | AUC | Log loss | Brier |", "|---|---|---|---|---|---|---|---|",
         *lines, "",
-        "## Difference vs baseline on leak-free test games (paired bootstrap, 95% CI)", "",
+        "## Difference vs baseline (paired bootstrap, 95% CI)", "",
         f"{BOOTSTRAP_SAMPLES} resamples of the same games for both models. An interval containing 0 means "
         "the difference is not distinguishable from noise.", "",
-        "| Window | Model | Accuracy diff CI | AUC diff CI |", "|---|---|---|---|",
+        "| Window | Model | Games | Accuracy diff CI | AUC diff CI |", "|---|---|---|---|---|",
         *ci_lines,
     ]
     text = "\n".join(report) + "\n"

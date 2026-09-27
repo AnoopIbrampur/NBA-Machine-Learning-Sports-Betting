@@ -8,15 +8,21 @@ file under `results/pregame/`; regenerate with the commands at the end.
 This fork's existing model (the baseline) was never an in-game model: it predicts from each team's
 **season-to-date averages**. So the question is not "can we convert in-game to pre-game" but
 "does **recent form (last N games) plus schedule context** beat season-to-date averages?".
-With a 20-game window, the pre-game model **ties** the baseline on leak-free test games. A 10-game
-window is significantly worse on AUC. A rolling scoring-margin feature, kept as an **ablation
-only**, puts the window-20 model slightly ahead (0.6481 vs 0.6401 accuracy, 0.6852 vs 0.6813 AUC),
-but the gain is **within noise** (95% CIs include 0).
+The baseline's data for 2024-25 and 2025-26 used to **leak the outcome**. That is now fixed and
+those rows regenerated (§1).
+
+On the corrected data, the window-20 pre-game model is **statistically tied** with the baseline
+on both held-out periods:
+- **Test:** 0.6435 vs 0.6400 accuracy, 0.6749 vs 0.6797 AUC.
+- **Validation:** 0.6419 vs 0.6556 accuracy, 0.6987 vs 0.7089 AUC.
+
+Every 95% CI for the difference includes 0. Point estimates slightly favour the pre-game model on
+test and the baseline on validation. A 10-game window is significantly worse on AUC. A rolling
+scoring-margin feature, kept as an **ablation only**, lifts window-20 to 0.6480 / 0.6838 on test
+and 0.6466 / 0.7107 on validation, also within noise.
 
 SHAP shows recent win-record features outranking all 11 box-score stats. This is the same pattern
-parent paper 2 reports: engineered context features rank above box-score stats. We also found that
-the baseline's features **leak the outcome** in the 2024-25 and 2025-26 seasons, which inflates its
-validation-split numbers.
+parent paper 2 reports: engineered context features rank above box-score stats.
 
 ## 1. What the repo's baseline actually is
 
@@ -26,9 +32,22 @@ validation-split numbers.
   FG%, rebounds, assists, points, plus-minus, W/L record, and so on. Rest days are also included.
 - **Not in-game:** these are team averages over earlier games, not the box score of the game being
   predicted. The in-game → pre-game framing does not apply to this repo.
-- **Leakage from 2024-25 on:**
-  - For 2012-13 through 2023-24, each row's stats exclude the game being predicted (≥99.8% of rows).
-  - For 2024-25 and 2025-26 they include it (100%), so the baseline sees the result.
+- **Leakage in 2024-25 and 2025-26 (found and fixed):**
+  - *Symptom.* Through 2023-24, each row's stats excluded the game being predicted (≥99.8% of
+    rows). In 2024-25 and 2025-26 they included it (100%), so the baseline saw the result.
+  - *Cause.* The upstream rewrite of `Get_Data.py` (`8e36b0b`, Jan 2026) dropped a one-day offset.
+    `DateTo` is inclusive, and the older code saved a `DateTo=D` fetch as the snapshot for D+1. The
+    rewrite saved it as the snapshot for D, so the snapshot for a game's date included that game.
+    Only the two seasons fetched with the rewritten code were affected.
+  - *Fix.* `fetch_data` now requests `DateTo = D − 1` for date D, with a regression test in
+    `Tests/test_get_data.py`.
+  - *Regeneration.* `scripts/regenerate_2024_26.py` re-fetched those seasons' 323 snapshots and
+    rebuilt only their rows. The 15,115 rows for 2012-13 to 2023-24 are byte-identical. Six
+    early-season games (2024-10-24, 2025-10-23) no longer have a full 30-team snapshot and drop out,
+    the same rule every earlier season follows.
+  - *Verification.* `Tests/test_dataset_leakage.py` checks all 14 seasons. It failed on 2024-25 and
+    2025-26 before the fix and passes on every season now.
+  - *Unaffected.* The prediction app (`main.py`) fetches live stats itself and was never affected.
   - Details: `results/pregame/leakage_audit.md`, `docs/dataset-tables.md`.
 
 ## 2. What the pre-game feature set adds
@@ -96,16 +115,69 @@ team's reading of the paper.
 
 **Common setup**
 - **Model:** XGBoost for every row.
-- **Games:** the same 16,946 (99.9% of the split; 23 games missing from the game logs are dropped
-  from every model).
+- **Games:** the same 16,940 for every model: the 16,969 games of the split, minus 6 early-season
+  games with no pre-game snapshot and 23 missing from the game logs.
 - **Split:** the fixed chronological split in `Data/splits/split_keys.csv`: train 2012-11 → 2022-01,
   test 2022-01 → 2024-11-13, validation 2024-11-13 → 2026-01-07.
 - **Tuning:** 40-trial random search scored by walk-forward CV on train only; test and validation
   are never used for tuning.
-- **Metrics:** positive class = home win, threshold 0.5. Home teams win 56.3% of test games and
+- **Metrics:** positive class = home win, threshold 0.5. Home teams win 56.4% of test games and
   54.5% of validation games.
 
-### 3a. Full split
+### 3a. Primary results: corrected data, full test and validation sets
+
+| Model | Split | n | Acc | Prec | Recall | F1 | AUC | Log loss | Brier | Acc diff vs baseline, 95% CI | AUC diff vs baseline, 95% CI |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6565 | 0.7580 | 0.7036 | 0.6797 | 0.6349 | 0.2221 | — | — |
+| **Pre-game, window=20** | test | 3,386 | 0.6435 | 0.6509 | 0.7931 | 0.7150 | 0.6749 | 0.6371 | 0.2229 | [−0.010, +0.017] | [−0.015, +0.006] |
+| Pre-game, window=20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6561 | 0.7894 | 0.7166 | 0.6838 | 0.6326 | 0.2209 | [−0.005, +0.021] | [−0.005, +0.014] |
+| Baseline: repo season-to-date | validation | 1,681 | 0.6556 | 0.6576 | 0.7675 | 0.7083 | 0.7089 | 0.6221 | 0.2165 | — | — |
+| **Pre-game, window=20** | validation | 1,681 | 0.6419 | 0.6454 | 0.7609 | 0.6984 | 0.6987 | 0.6275 | 0.2189 | [−0.033, +0.003] | [−0.023, +0.002] |
+| Pre-game, window=20 + margin (ablation) | validation | 1,681 | 0.6466 | 0.6507 | 0.7587 | 0.7006 | 0.7107 | 0.6207 | 0.2157 | [−0.027, +0.007] | [−0.010, +0.014] |
+
+Sources:
+- metrics: `results/pregame/metrics_w20.md`
+- bootstrap CIs (paired, 2,000 resamples of the same games for both models):
+  `results/pregame/leakage_audit.md`
+
+The models are identical to the pre-fix run (same training data, tuning result and parameters).
+Only the regenerated 2024-26 evaluation rows changed. Window=10 on the corrected data is in
+`results/pregame/metrics_w10.md`. It is significantly worse than the baseline on AUC in both test
+(CI [−0.032, −0.006]) and validation (CI [−0.043, −0.009]).
+
+**Reading the results**
+- **Window=20 is statistically tied with the baseline** in both held-out periods. On test it is
+  slightly ahead on accuracy and behind on AUC. On validation (2024-25 and 2025-26) the baseline
+  is ahead on both, but both intervals include 0, if only just (upper bounds +0.003 and +0.002).
+- **Scoring margin (ablation only, §2a)** moves window=20 ahead of the baseline on test (every
+  metric) and level on validation AUC (0.7107 vs 0.7089). None of this is significant.
+- **The leak mattered only for the later period.** Fixing it moved the baseline's validation AUC
+  from 0.7648 to 0.7089 and its test AUC from 0.6889 to 0.6797. On its 152 test games from 2024-25,
+  the baseline went from 0.750 / 0.845 to 0.638 / 0.644 (accuracy / AUC).
+- **Window=10 is the one clear loser**, significantly below the baseline on AUC in both periods.
+
+### 3b. Secondary check: test games from never-affected seasons only (n = 3,234, 2021-22 → 2023-24)
+
+This comparison does not depend on the fix at all. Its numbers are unchanged from before the fix,
+which also confirms the models are the same.
+
+| Model | Acc | AUC | Log loss | Brier | Acc diff vs baseline, 95% CI | AUC diff vs baseline, 95% CI |
+|---|---|---|---|---|---|---|
+| Baseline: repo season-to-date | 0.6401 | 0.6813 | 0.6345 | 0.2219 | — | — |
+| Pre-game, window=10 | 0.6342 | 0.6628 | 0.6451 | 0.2266 | [−0.021, +0.010] | **[−0.033, −0.005]** |
+| Pre-game, window=10 + margin | 0.6336 | 0.6678 | 0.6420 | 0.2253 | [−0.022, +0.008] | **[−0.027, −0.0005]** |
+| **Pre-game, window=20** | 0.6432 | 0.6774 | 0.6365 | 0.2226 | [−0.011, +0.017] | [−0.015, +0.007] |
+| Pre-game, window=20 + margin | 0.6481 | 0.6852 | 0.6325 | 0.2208 | [−0.005, +0.021] | [−0.006, +0.014] |
+
+Bold intervals exclude 0. The conclusions match §3a:
+- window=10 is worse than the baseline on AUC;
+- window=20 is tied with the baseline;
+- margin helps a little, not significantly (+0.005 accuracy, +0.008 AUC on top of window=20).
+
+### 3c. Superseded: full-split results before the leakage fix
+
+Kept verbatim because some of these numbers were reported at earlier check-ins. The window=10 rows
+are the ones reported first. Files: `results/pregame/pre_fix/`.
 
 | Model | Split | Acc | Prec | Recall | F1 | AUC | Log loss | Brier |
 |---|---|---|---|---|---|---|---|---|
@@ -120,36 +192,10 @@ team's reading of the paper.
 | **Pre-game, window=20** | validation | 0.6417 | 0.6451 | 0.7612 | 0.6983 | 0.6985 | 0.6277 | 0.2189 |
 | Pre-game, window=20 + margin (ablation) | validation | 0.6465 | 0.6505 | 0.7590 | 0.7006 | 0.7105 | 0.6208 | 0.2158 |
 
-⚠ The baseline's validation row is inflated: every validation game is in the leaky 2024-26
-seasons. Its test row is slightly inflated too, because 156 of its 3,390 games are from 2024-25.
-
-The window=10 rows are the numbers reported at the previous check-in and are unchanged. Window=20
-is now the primary configuration.
-
-### 3b. Like-for-like: leak-free test games only (n = 3,234, seasons 2021-22 → 2023-24)
-
-| Model | Acc | AUC | Log loss | Brier | Acc diff vs baseline, 95% CI | AUC diff vs baseline, 95% CI |
-|---|---|---|---|---|---|---|
-| Baseline: repo season-to-date | 0.6401 | 0.6813 | 0.6345 | 0.2219 | — | — |
-| Pre-game, window=10 | 0.6342 | 0.6628 | 0.6451 | 0.2266 | [−0.021, +0.010] | **[−0.033, −0.005]** |
-| Pre-game, window=10 + margin | 0.6336 | 0.6678 | 0.6420 | 0.2253 | [−0.022, +0.008] | **[−0.027, −0.001]** |
-| **Pre-game, window=20** | 0.6432 | 0.6774 | 0.6365 | 0.2226 | [−0.011, +0.017] | [−0.015, +0.007] |
-| Pre-game, window=20 + margin | 0.6481 | 0.6852 | 0.6325 | 0.2208 | [−0.005, +0.021] | [−0.006, +0.014] |
-
-The CIs come from a paired bootstrap (2,000 resamples of the same games for both models). Bold
-intervals exclude 0.
-
-**Reading the results**
-- **Window=10 is worse than the baseline.** Its AUC shortfall is statistically clear.
-- **Window=20 matches the baseline.** It is slightly better on accuracy and slightly worse on AUC,
-  and neither difference is distinguishable from noise.
-- **Scoring margin (ablation only, §2a) helps a little.** It lifts window=20 by about +0.005
-  accuracy and +0.008 AUC on leak-free games and moves it ahead of the baseline on every metric.
-  The lead is not statistically significant.
-- **Margin is not the missing piece.** It narrows the gap to the baseline, but the gap was mostly
-  window length (10 → 20) plus noise.
-- **Behind the full-split validation gap:** the baseline's large lead there (0.765 vs ~0.70 AUC)
-  comes from leakage, not from better features.
+⚠ These baseline rows are inflated by the leak. Every validation game, and 156 of the 3,390 test
+games, came from the leaky 2024-26 rows. The pre-game rows moved only in the 4th decimal after
+the fix: they are unaffected by the leak, and the regenerated dataset drops 4 test and 2
+validation games.
 
 ## 4. Parent paper 1 (PLOS ONE 2024) — corrected numbers
 
@@ -169,7 +215,9 @@ values (0.769/0.846, 0.818/0.897, 0.902/0.964); those do not appear in the paper
 ## 5. SHAP: pre-game model vs parent paper 1
 
 Both official pre-game models (11 stats + context, no scoring margin) were explained on the test
-split (n = 3,390), ranking features by mean |SHAP|. Window=20 is the primary model. The window=10
+split (n = 3,390), ranking features by mean |SHAP|. This ran before the leakage fix. The fix
+touched neither these models nor their features, and removed only 4 of these test games, so the
+rankings stand. Window=20 is the primary model. The window=10
 results are from the previous check-in and unchanged. Files: `results/pregame/shap_w20.md` and
 `shap_w10.md`, with bar and beeswarm plots for each window.
 
@@ -250,24 +298,26 @@ specific context features differ.
 
 ## 6. Data provenance and housekeeping
 
-- **Dataset tables:** `dataset_2012-24_new` and `dataset_2012-26` are the same data through 2023-24;
-  `dataset_2012-26` adds 2024-25 and 2025-26. See `docs/dataset-tables.md`.
-- **Split:** valid for the pre-game models. For the baseline, compare on leak-free games (§3b).
+- **Dataset tables:** `dataset_2012-24_new` and `dataset_2012-26` are the same data through
+  2023-24. `dataset_2012-26` adds 2024-25 and 2025-26, now regenerated without the leak. See
+  `docs/dataset-tables.md`.
+- **Split:** valid for all models on the corrected data. Six split games no longer have a dataset
+  row (§1) and drop out of every model equally.
 - **Earlier LR baseline** (0.6409 acc / 0.6324 log loss): not reproducible, and not caused by
   package versions. It is also scored on a different test set (the LR script's own 90/10 split).
   See `docs/lr-reproducibility.md`.
 - **Repo's own XGBoost protocol** (after the scikit-learn fix): 0.6977 test accuracy on the last 10%
-  of `dataset_2012-26`. That window is inside the leaky 2024-26 seasons, so this number is inflated
-  and should not be cited as a baseline.
+  of `dataset_2012-26`. That was measured before the fix, inside the leaky 2024-26 seasons. It is
+  inflated and should not be cited as a baseline.
 
 ## 7. Open decisions
 
-Still open:
-1. How to present the baseline's validation numbers given the leakage. The options are to report
-   leak-free test only (§3b), to regenerate 2024-26 rows of the dataset without the current game,
-   or both.
+No open items.
 
 Resolved:
+- **Baseline leakage in 2024-26:** fixed at the source and the rows regenerated. The corrected
+  full-split results are primary (§3a), with the never-affected-seasons comparison kept as a
+  secondary check (§3b).
 - **Scoring margin:** stays an ablation only, not part of the official feature set (§2a).
 - **SHAP for window=20:** done. The ranking is stable against window=10 (§5).
 
@@ -275,7 +325,7 @@ Resolved:
 
 ```bash
 python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
-.venv/bin/python -m unittest Tests.test_pregame_features
+.venv/bin/python -m unittest Tests.test_pregame_features Tests.test_get_data Tests.test_dataset_leakage
 .venv/bin/python -m src.Pregame.game_logs            # download game logs (cached)
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w

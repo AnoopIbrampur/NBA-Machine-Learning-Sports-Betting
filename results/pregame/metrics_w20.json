@@ -1,0 +1,134 @@
+{
+  "repo": {
+    "n_features": 106,
+    "n_train": 11873,
+    "cv_log_loss": 0.6240370222535907,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.008811865890264378,
+      "subsample": 0.5577450318326775,
+      "colsample_bytree": 0.51057400816822,
+      "min_child_weight": 6,
+      "gamma": 0.27697704582130056,
+      "lambda": 0.2235027864198878,
+      "alpha": 0.01393401375565703
+    },
+    "num_boost_round": 386,
+    "metrics": {
+      "test": {
+        "n": 3386,
+        "accuracy": 0.6399881866509155,
+        "precision": 0.6565335753176044,
+        "recall": 0.7579884756416972,
+        "f1": 0.7036226598589838,
+        "auc": 0.6796828478436427,
+        "log_loss": 0.6349418181210631,
+        "brier": 0.22209538653279026,
+        "home_win_rate": 0.5637920850561134
+      },
+      "validation": {
+        "n": 1681,
+        "accuracy": 0.6555621653777514,
+        "precision": 0.6576239476145931,
+        "recall": 0.767467248908297,
+        "f1": 0.7083123425692696,
+        "auc": 0.7089062990552845,
+        "log_loss": 0.6221065511479418,
+        "brier": 0.2164860951317386,
+        "home_win_rate": 0.544913741820345
+      }
+    }
+  },
+  "pregame": {
+    "n_features": 19,
+    "n_train": 11873,
+    "cv_log_loss": 0.6308243178207845,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.008811865890264378,
+      "subsample": 0.5577450318326775,
+      "colsample_bytree": 0.51057400816822,
+      "min_child_weight": 6,
+      "gamma": 0.27697704582130056,
+      "lambda": 0.2235027864198878,
+      "alpha": 0.01393401375565703
+    },
+    "num_boost_round": 497,
+    "metrics": {
+      "test": {
+        "n": 3386,
+        "accuracy": 0.6435321913762552,
+        "precision": 0.6509028374892519,
+        "recall": 0.7930853850183343,
+        "f1": 0.7149940968122787,
+        "auc": 0.6749321621950402,
+        "log_loss": 0.6371282034471439,
+        "brier": 0.22294246220222871,
+        "home_win_rate": 0.5637920850561134
+      },
+      "validation": {
+        "n": 1681,
+        "accuracy": 0.6418798334324807,
+        "precision": 0.6453703703703704,
+        "recall": 0.7609170305676856,
+        "f1": 0.6983967935871743,
+        "auc": 0.6987149299312154,
+        "log_loss": 0.6275329775891636,
+        "brier": 0.21885556696843092,
+        "home_win_rate": 0.544913741820345
+      }
+    }
+  },
+  "pregame_margin": {
+    "n_features": 20,
+    "n_train": 11873,
+    "cv_log_loss": 0.6281541427245215,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.008811865890264378,
+      "subsample": 0.5577450318326775,
+      "colsample_bytree": 0.51057400816822,
+      "min_child_weight": 6,
+      "gamma": 0.27697704582130056,
+      "lambda": 0.2235027864198878,
+      "alpha": 0.01393401375565703
+    },
+    "num_boost_round": 423,
+    "metrics": {
+      "test": {
+        "n": 3386,
+        "accuracy": 0.6479621972829297,
+        "precision": 0.6560731388767959,
+        "recall": 0.7894185437401781,
+        "f1": 0.7165953399904897,
+        "auc": 0.6838353975201386,
+        "log_loss": 0.6325856216890334,
+        "brier": 0.22087445143999648,
+        "home_win_rate": 0.5637920850561134
+      },
+      "validation": {
+        "n": 1681,
+        "accuracy": 0.6466389054134444,
+        "precision": 0.650749063670412,
+        "recall": 0.7587336244541485,
+        "f1": 0.7006048387096774,
+        "auc": 0.7106972628935124,
+        "log_loss": 0.6206860287910776,
+        "brier": 0.21571028733823092,
+        "home_win_rate": 0.544913741820345
+      }
+    }
+  }
+}
