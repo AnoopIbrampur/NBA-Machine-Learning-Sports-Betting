@@ -105,3 +105,6 @@ venv.bak/
 
 .idea
 .DS_Store
+
+# DS 340W pre-game pipeline: regenerable caches and models
+Data/pregame/
