@@ -56,6 +56,13 @@ class TestGetData(unittest.TestCase):
         self.assertFalse(result.empty)
         self.assertEqual(mock_json.call_count, 2)
 
+    def test_fetch_data_queries_through_previous_day(self):
+        url = "DateTo={0}/{1}/{3}&start={2}&season={4}"
+        with mock.patch.object(get_data, "get_json_data", return_value={}) as mock_json, \
+             mock.patch.object(get_data, "to_data_frame", return_value=pd.DataFrame({"A": [1]})):
+            get_data.fetch_data(url, date(2025, 3, 1), "2024", "2024-25")
+        mock_json.assert_called_once_with("DateTo=2/28/2025&start=2024&season=2024-25")
+
     def test_main_fetches_only_new_dates(self):
         config = {
             "data_url": "http://example.com",

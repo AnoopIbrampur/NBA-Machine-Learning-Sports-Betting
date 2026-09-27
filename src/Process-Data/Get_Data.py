@@ -54,9 +54,12 @@ def get_table_dates(con):
 
 
 def fetch_data(url, date_pointer, start_year, season_key):
+    # The table for a date must hold stats from games *before* it: DateTo is inclusive, so query
+    # through the previous day. Without this, games played on date_pointer leak into its snapshot.
+    as_of = date_pointer - timedelta(days=1)
     for attempt in range(1, MAX_RETRIES + 1):
         raw_data = get_json_data(
-            url.format(date_pointer.month, date_pointer.day, start_year, date_pointer.year, season_key)
+            url.format(as_of.month, as_of.day, start_year, as_of.year, season_key)
         )
         df = to_data_frame(raw_data)
         if not df.empty:
