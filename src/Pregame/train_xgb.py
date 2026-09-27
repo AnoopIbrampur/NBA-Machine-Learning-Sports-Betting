@@ -130,17 +130,17 @@ def train_feature_set(games, feature_set, feature_columns, trials, n_splits, see
 
 def markdown_report(results, window):
     lines = [f"# XGBoost: season-to-date (repo) vs rolling pre-game features (window={window})", ""]
-    header = "| Model | Split | n | Accuracy | Precision | Recall | F1 | AUC | Log loss | Home-win rate |"
-    lines += [header, "|" + "---|" * 10]
+    header = "| Model | Split | n | Accuracy | Precision | Recall | F1 | AUC | Log loss | Brier | Home-win rate |"
+    lines += [header, "|" + "---|" * 11]
     labels = {"repo": "Repo season-to-date features (baseline)", "pregame": f"Pre-game rolling-{window} + context"}
     for feature_set, result in results.items():
         for split, m in result["metrics"].items():
             lines.append(f"| {labels[feature_set]} | {split} | {m['n']} | {m['accuracy']:.4f} | "
                          f"{m['precision']:.4f} | {m['recall']:.4f} | {m['f1']:.4f} | {m['auc']:.4f} | "
-                         f"{m['log_loss']:.4f} | {m['home_win_rate']:.4f} |")
+                         f"{m['log_loss']:.4f} | {m['brier']:.4f} | {m['home_win_rate']:.4f} |")
     for period, m in PAPER_XGBOOST.items():
         lines.append(f"| Parent paper, in-game {period} | 10-fold CV | - | {m['accuracy']:.3f} | "
-                     f"{m['precision']:.3f} | {m['recall']:.3f} | {m['f1']:.3f} | {m['auc']:.3f} | - | - |")
+                     f"{m['precision']:.3f} | {m['recall']:.3f} | {m['f1']:.3f} | {m['auc']:.3f} | - | - | - |")
     lines += ["", "Positive class = home win; threshold 0.5. Parent-paper rows use box scores from the "
               "game being predicted, so they are an upper bound rather than a like-for-like comparison."]
     return "\n".join(lines) + "\n"
