@@ -86,5 +86,49 @@
         "home_win_rate": 0.5448603683897801
       }
     }
+  },
+  "pregame_margin": {
+    "n_features": 20,
+    "n_train": 11873,
+    "cv_log_loss": 0.6340556817677313,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 5,
+      "eta": 0.011561656680118628,
+      "subsample": 0.7772923935079175,
+      "colsample_bytree": 0.5319086280520877,
+      "min_child_weight": 9,
+      "gamma": 4.13815585996291,
+      "lambda": 1.8337021671045923,
+      "alpha": 1.1118752706560786
+    },
+    "num_boost_round": 331,
+    "metrics": {
+      "test": {
+        "n": 3390,
+        "accuracy": 0.6336283185840708,
+        "precision": 0.6468777484608619,
+        "recall": 0.7701570680628272,
+        "f1": 0.7031548757170172,
+        "auc": 0.6665011673977642,
+        "log_loss": 0.6421475670499334,
+        "brier": 0.22540926533500003,
+        "home_win_rate": 0.5634218289085545
+      },
+      "validation": {
+        "n": 1683,
+        "accuracy": 0.6446821152703506,
+        "precision": 0.6472760849492152,
+        "recall": 0.7644492911668485,
+        "f1": 0.701,
+        "auc": 0.6949711142304769,
+        "log_loss": 0.6301439359422575,
+        "brier": 0.22018679532854238,
+        "home_win_rate": 0.5448603683897801
+      }
+    }
   }
 }

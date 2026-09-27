@@ -16,6 +16,8 @@ from src.Pregame.paths import features_path
 PCT_STATS = {"FG%": ("FGM", "FGA"), "2P%": ("FG2M", "FG2A"), "3P%": ("FG3M", "FG3A"), "FT%": ("FTM", "FTA")}
 COUNT_STATS = {"ORB": "OREB", "DRB": "DREB", "AST": "AST", "STL": "STL", "BLK": "BLK", "TOV": "TOV", "PF": "PF"}
 PAPER_STATS = list(PCT_STATS) + list(COUNT_STATS)
+# Ablation only, not in the parent paper's list: rolling scoring margin (points for minus against).
+ABLATION_FEATURES = ["MARGIN_diff"]
 
 
 def team_games(logs):
@@ -49,6 +51,7 @@ def add_team_features(games, window):
     for stat, column in COUNT_STATS.items():
         out[stat] = means[column]
 
+    out["MARGIN"] = prior_rolling(out, ["PLUS_MINUS"], window, "mean")["PLUS_MINUS"]
     out["win_pct"] = prior_rolling(out, ["WIN"], window, "mean")["WIN"]
     out["rest_days"] = out.groupby(["TEAM_ID", "SEASON"], sort=False)["Date"].diff().dt.days
     out["b2b"] = (out["rest_days"] == 1).astype(float).where(out["rest_days"].notna())
@@ -63,7 +66,7 @@ def add_team_features(games, window):
 
 def build_game_features(logs, window):
     teams = add_team_features(team_games(logs), window)
-    context = ["win_pct", "venue_win_pct", "rest_days", "b2b"]
+    context = ["win_pct", "venue_win_pct", "rest_days", "b2b", "MARGIN"]
     keep = ["GAME_ID", "Date", "TEAM_NAME", "SEASON"] + PAPER_STATS + context
 
     # Neutral-site games stay in each team's rolling history but have no home side to predict.
@@ -88,6 +91,7 @@ def build_game_features(logs, window):
     for side in ("home", "away"):
         features[f"rest_days_{side}"] = games[f"rest_days_{side}"]
         features[f"b2b_{side}"] = games[f"b2b_{side}"]
+    features["MARGIN_diff"] = games["MARGIN_home"] - games["MARGIN_away"]
     return features.sort_values(["Date", "GAME_ID"]).reset_index(drop=True)
 
 

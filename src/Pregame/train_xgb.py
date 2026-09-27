@@ -16,6 +16,7 @@ from sklearn.metrics import (accuracy_score, brier_score_loss, f1_score, log_los
                              precision_score, recall_score, roc_auc_score)
 from sklearn.model_selection import TimeSeriesSplit
 
+from src.Pregame.features import ABLATION_FEATURES
 from src.Pregame.paths import (DATASET_DB, DATASET_TABLE, GAME_KEY, RESULTS_DIR, SPLIT_KEYS,
                                features_path, model_path)
 
@@ -50,7 +51,8 @@ def load_games(window):
     games = games.assign(_date=pd.to_datetime(games["Date"])).sort_values("_date", kind="stable")
     feature_columns = {
         "repo": [c for c in repo.columns if c not in REPO_DROP_COLUMNS + ["split"]],
-        "pregame": [c for c in pregame.columns if c not in PREGAME_ID_COLUMNS],
+        "pregame": [c for c in pregame.columns if c not in PREGAME_ID_COLUMNS + ABLATION_FEATURES],
+        "pregame_margin": [c for c in pregame.columns if c not in PREGAME_ID_COLUMNS],
     }
     return games.drop(columns="_date").reset_index(drop=True), feature_columns
 
@@ -132,7 +134,11 @@ def markdown_report(results, window):
     lines = [f"# XGBoost: season-to-date (repo) vs rolling pre-game features (window={window})", ""]
     header = "| Model | Split | n | Accuracy | Precision | Recall | F1 | AUC | Log loss | Brier | Home-win rate |"
     lines += [header, "|" + "---|" * 11]
-    labels = {"repo": "Repo season-to-date features (baseline)", "pregame": f"Pre-game rolling-{window} + context"}
+    labels = {
+        "repo": "Repo season-to-date features (baseline)",
+        "pregame": f"Pre-game rolling-{window} + context",
+        "pregame_margin": f"Ablation: pre-game rolling-{window} + context + scoring margin",
+    }
     for feature_set, result in results.items():
         for split, m in result["metrics"].items():
             lines.append(f"| {labels[feature_set]} | {split} | {m['n']} | {m['accuracy']:.4f} | "
@@ -152,7 +158,8 @@ def main():
     parser.add_argument("--trials", type=int, default=40)
     parser.add_argument("--splits", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--feature-sets", nargs="+", default=["repo", "pregame"], choices=["repo", "pregame"])
+    parser.add_argument("--feature-sets", nargs="+", default=["repo", "pregame", "pregame_margin"],
+                        choices=["repo", "pregame", "pregame_margin"])
     args = parser.parse_args()
 
     games, feature_columns = load_games(args.window)

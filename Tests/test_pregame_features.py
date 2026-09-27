@@ -16,13 +16,15 @@ def synthetic_logs(n_games=8, seed=0):
     for i, date in enumerate(dates):
         home, away = ("AAA", "BBB") if i % 2 == 0 else ("BBB", "AAA")
         home_won = rng.random() < 0.5
-        for team, opp, is_home, won in [(home, away, True, home_won), (away, home, False, not home_won)]:
+        margin = int(rng.integers(1, 25)) * (1 if home_won else -1)
+        for team, opp, is_home, won, plus_minus in [(home, away, True, home_won, margin),
+                                                    (away, home, False, not home_won, -margin)]:
             fga, fg3a, fta = rng.integers(80, 95), rng.integers(25, 40), rng.integers(15, 30)
             rows.append({
                 "TEAM_ID": 1 if team == "AAA" else 2, "TEAM_NAME": team, "GAME_ID": f"G{i:03d}",
                 "GAME_DATE": date.strftime("%Y-%m-%d"), "SEASON": "2019-20",
                 "MATCHUP": f"{team} vs. {opp}" if is_home else f"{team} @ {opp}",
-                "WL": "W" if won else "L",
+                "WL": "W" if won else "L", "PLUS_MINUS": plus_minus,
                 "FGA": fga, "FGM": rng.integers(30, fga), "FG3A": fg3a, "FG3M": rng.integers(8, fg3a),
                 "FTA": fta, "FTM": rng.integers(8, fta), "OREB": rng.integers(5, 15),
                 "DREB": rng.integers(25, 40), "AST": rng.integers(15, 30), "STL": rng.integers(4, 12),
@@ -48,6 +50,7 @@ class TestPregameFeatures(unittest.TestCase):
             self.assertAlmostEqual(team.loc[k, "FG%"], prior["FGM"].sum() / prior["FGA"].sum())
             self.assertAlmostEqual(team.loc[k, "DRB"], prior["DREB"].mean())
             self.assertAlmostEqual(team.loc[k, "win_pct"], prior["WIN"].mean())
+            self.assertAlmostEqual(team.loc[k, "MARGIN"], prior["PLUS_MINUS"].mean())
             self.assertEqual(team.loc[k, "rest_days"], (team.loc[k, "Date"] - team.loc[k - 1, "Date"]).days)
             same_venue = team.iloc[:k][team.iloc[:k]["is_home"] == team.loc[k, "is_home"]].tail(WINDOW)
             expected = same_venue["WIN"].mean() if len(same_venue) else np.nan
@@ -58,7 +61,7 @@ class TestPregameFeatures(unittest.TestCase):
         before = build_game_features(self.logs, WINDOW).set_index("GAME_ID").loc[target]
         altered = self.logs.copy()
         in_game = altered["GAME_ID"] == target
-        altered.loc[in_game, ["FGM", "DREB", "TOV", "BLK"]] = [0, 0, 99, 99]
+        altered.loc[in_game, ["FGM", "DREB", "TOV", "BLK", "PLUS_MINUS"]] = [0, 0, 99, 99, 99]
         altered.loc[in_game, "WL"] = altered.loc[in_game, "WL"].map({"W": "L", "L": "W"})
         after = build_game_features(altered, WINDOW).set_index("GAME_ID").loc[target]
         pd.testing.assert_series_equal(before, after)
