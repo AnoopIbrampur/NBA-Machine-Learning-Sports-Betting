@@ -1,0 +1,13 @@
+# DS 340W pre-game research pipeline (Python 3.13).
+# Separate from requirements.txt, whose tensorflow==2.14 pin has no Python 3.13 wheels.
+#   python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
+joblib==1.6.0
+matplotlib==3.11.2
+numpy==2.5.2
+pandas==3.0.5
+requests==2.34.2
+scikit-learn==1.5.2
+scipy==1.18.1
+shap==0.52.0
+toml==0.10.2
+xgboost==3.4.1

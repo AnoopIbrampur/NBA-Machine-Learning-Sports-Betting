@@ -6,9 +6,15 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import TimeSeriesSplit
+
+try:  # scikit-learn >= 1.6 deprecates cv="prefit" in favor of FrozenEstimator
+    from sklearn.frozen import FrozenEstimator
+except ImportError:
+    FrozenEstimator = None
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
@@ -117,9 +123,11 @@ def format_param(value, precision=3):
     return formatted.replace(".", "p")
 
 
-class BoosterWrapper:
+class BoosterWrapper(ClassifierMixin, BaseEstimator):
+    # Newer scikit-learn only calibrates estimators it recognizes as classifiers.
     def __init__(self, booster, num_class):
         self.booster = booster
+        self.num_class = num_class
         self.classes_ = np.arange(num_class)
 
     def fit(self, X, y):
@@ -127,6 +135,15 @@ class BoosterWrapper:
 
     def predict_proba(self, X):
         return self.booster.predict(xgb.DMatrix(X))
+
+    def predict(self, X):
+        return np.argmax(self.predict_proba(X), axis=1)
+
+
+def make_prefit_calibrator(estimator, method):
+    if FrozenEstimator is not None:
+        return CalibratedClassifierCV(FrozenEstimator(estimator), method=method)
+    return CalibratedClassifierCV(estimator, method=method, cv="prefit")
 
 
 def walk_forward_cv_loss(X, y, params, num_boost_round, n_splits):
@@ -202,11 +219,7 @@ def main():
     if args.calibration == "none":
         probabilities = best_model.predict(xgb.DMatrix(X_test))
     else:
-        calibrator = CalibratedClassifierCV(
-            BoosterWrapper(best_model, NUM_CLASSES),
-            method=args.calibration,
-            cv="prefit",
-        )
+        calibrator = make_prefit_calibrator(BoosterWrapper(best_model, NUM_CLASSES), args.calibration)
         calibrator.fit(X_calib, y_calib)
         probabilities = calibrator.predict_proba(X_test)
 
