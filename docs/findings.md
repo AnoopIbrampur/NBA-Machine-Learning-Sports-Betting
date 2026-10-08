@@ -9,16 +9,18 @@ This fork's existing model (the baseline) was never an in-game model: it predict
 **season-to-date averages**. So the question is not "can we convert in-game to pre-game" but
 "does **recent form (last N games) plus schedule context** beat season-to-date averages?".
 The baseline's data for 2024-25 and 2025-26 used to **leak the outcome**. That is now fixed and
-those rows regenerated (§1).
+those rows regenerated (§1). Two test-game labels were also wrong (odds scraped before the game
+finished). They are fixed at the source (§10), which moved overall test AUC by at most 0.0007 and
+changed no conclusion.
 
 On the corrected data, the window-20 pre-game model is **statistically tied** with the baseline
 on both held-out periods:
-- **Test:** 0.6435 vs 0.6400 accuracy, 0.6749 vs 0.6797 AUC.
+- **Test:** 0.6435 vs 0.6400 accuracy, 0.6746 vs 0.6793 AUC.
 - **Validation:** 0.6419 vs 0.6556 accuracy, 0.6987 vs 0.7089 AUC.
 
 Every 95% CI for the difference includes 0. Point estimates slightly favour the pre-game model on
 test and the baseline on validation. A 10-game window is significantly worse on AUC. A rolling
-scoring-margin feature, kept as an **ablation only**, lifts window-20 to 0.6480 / 0.6838 on test
+scoring-margin feature, kept as an **ablation only**, lifts window-20 to 0.6480 / 0.6836 on test
 and 0.6466 / 0.7107 on validation, also within noise.
 
 SHAP shows recent win-record features outranking all 11 box-score stats. This is the same pattern
@@ -28,15 +30,15 @@ parent paper 2 reports: engineered context features rank above box-score stats.
 flags into a full fatigue and travel feature group, following parent paper 3 (Bowman et al., 2023).
 - **No gain.** Accuracy, AUC and log loss do not improve beyond noise on test or validation,
   overall or on any of six slices fixed in advance.
-- **Test results:** pre-game + fatigue + travel scores 0.6412 accuracy / 0.6763 AUC, against
-  0.6435 / 0.6749 for the official pre-game model.
+- **Test results:** pre-game + fatigue + travel scores 0.6412 accuracy / 0.6759 AUC, against
+  0.6435 / 0.6746 for the official pre-game model.
 - **The effect itself is real.** The home team wins 61.9% when only the visitor is on a b2b and
-  49.9% when only the home team is.
+  50.0% when only the home team is.
 - **Partial replication of Bowman.** On our training seasons the visitor-b2b odds ratio is
   1.31 [1.18, 1.46], against Bowman's 1.51. The models already capture this through rest days.
 
 **The betting market prices back-to-backs (§9), as far as these data can tell.**
-- **The market is far ahead of us.** The devigged moneyline scores 0.680 / 0.726 accuracy / AUC on
+- **The market is far ahead of us.** The devigged moneyline scores 0.679 / 0.725 accuracy / AUC on
   test and 0.681 / 0.742 on validation. That is significantly above every model of ours (all CIs
   exclude zero); it is a reference row, not our model.
 - **No back-to-back situation adds information beyond the market price.** With the market's
@@ -99,7 +101,7 @@ margin is **not** part of it and is reported only as a labelled ablation (`prega
 
 1. **Its gain is small next to the window change.**
    - On leak-free test games, going from a 10-game to a 20-game window adds +0.009 accuracy and
-     +0.015 AUC.
+     +0.014 AUC.
    - Adding margin on top of window 20 adds only +0.005 accuracy and +0.008 AUC, and that gain is
      not statistically distinguishable from zero.
 2. **It would break comparability with parent paper 1.** The point of using that paper's stated
@@ -151,9 +153,9 @@ team's reading of the paper.
 
 | Model | Split | n | Acc | Prec | Recall | F1 | AUC | Log loss | Brier | Acc diff vs baseline, 95% CI | AUC diff vs baseline, 95% CI |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6565 | 0.7580 | 0.7036 | 0.6797 | 0.6349 | 0.2221 | — | — |
-| **Pre-game, window=20** | test | 3,386 | 0.6435 | 0.6509 | 0.7931 | 0.7150 | 0.6749 | 0.6371 | 0.2229 | [−0.010, +0.017] | [−0.015, +0.006] |
-| Pre-game, window=20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6561 | 0.7894 | 0.7166 | 0.6838 | 0.6326 | 0.2209 | [−0.005, +0.021] | [−0.005, +0.014] |
+| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6570 | 0.7577 | 0.7038 | 0.6793 | 0.6350 | 0.2221 | — | — |
+| **Pre-game, window=20** | test | 3,386 | 0.6435 | 0.6513 | 0.7928 | 0.7151 | 0.6746 | 0.6372 | 0.2230 | [−0.010, +0.017] | [−0.015, +0.006] |
+| Pre-game, window=20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6565 | 0.7891 | 0.7167 | 0.6836 | 0.6326 | 0.2209 | [−0.005, +0.021] | [−0.005, +0.014] |
 | Baseline: repo season-to-date | validation | 1,681 | 0.6556 | 0.6576 | 0.7675 | 0.7083 | 0.7089 | 0.6221 | 0.2165 | — | — |
 | **Pre-game, window=20** | validation | 1,681 | 0.6419 | 0.6454 | 0.7609 | 0.6984 | 0.6987 | 0.6275 | 0.2189 | [−0.033, +0.003] | [−0.023, +0.002] |
 | Pre-game, window=20 + margin (ablation) | validation | 1,681 | 0.6466 | 0.6507 | 0.7587 | 0.7006 | 0.7107 | 0.6207 | 0.2157 | [−0.027, +0.007] | [−0.010, +0.014] |
@@ -175,22 +177,24 @@ Only the regenerated 2024-26 evaluation rows changed. Window=10 on the corrected
 - **Scoring margin (ablation only, §2a)** moves window=20 ahead of the baseline on test (every
   metric) and level on validation AUC (0.7107 vs 0.7089). None of this is significant.
 - **The leak mattered only for the later period.** Fixing it moved the baseline's validation AUC
-  from 0.7648 to 0.7089 and its test AUC from 0.6889 to 0.6797. On its 152 test games from 2024-25,
+  from 0.7648 to 0.7089 and its test AUC from 0.6889 to 0.6797
+  (0.6793 after the §10 label fix). On its 152 test games from 2024-25,
   the baseline went from 0.750 / 0.845 to 0.638 / 0.644 (accuracy / AUC).
 - **Window=10 is the one clear loser**, significantly below the baseline on AUC in both periods.
 
 ### 3b. Secondary check: test games from never-affected seasons only (n = 3,234, 2021-22 → 2023-24)
 
-This comparison does not depend on the fix at all. Its numbers are unchanged from before the fix,
-which also confirms the models are the same.
+This comparison does not depend on the leakage fix at all. Its numbers were unchanged by that fix,
+which also confirms the models are the same. The label fix (§10) corrected two 2023-24 test games
+here, which moved AUC, log loss and Brier in the 4th decimal; the table shows corrected values.
 
 | Model | Acc | AUC | Log loss | Brier | Acc diff vs baseline, 95% CI | AUC diff vs baseline, 95% CI |
 |---|---|---|---|---|---|---|
-| Baseline: repo season-to-date | 0.6401 | 0.6813 | 0.6345 | 0.2219 | — | — |
-| Pre-game, window=10 | 0.6342 | 0.6628 | 0.6451 | 0.2266 | [−0.021, +0.010] | **[−0.033, −0.005]** |
-| Pre-game, window=10 + margin | 0.6336 | 0.6678 | 0.6420 | 0.2253 | [−0.022, +0.008] | **[−0.027, −0.0005]** |
-| **Pre-game, window=20** | 0.6432 | 0.6774 | 0.6365 | 0.2226 | [−0.011, +0.017] | [−0.015, +0.007] |
-| Pre-game, window=20 + margin | 0.6481 | 0.6852 | 0.6325 | 0.2208 | [−0.005, +0.021] | [−0.006, +0.014] |
+| Baseline: repo season-to-date | 0.6401 | 0.6808 | 0.6346 | 0.2219 | — | — |
+| Pre-game, window=10 | 0.6342 | 0.6627 | 0.6450 | 0.2265 | [−0.021, +0.010] | **[−0.032, −0.004]** |
+| Pre-game, window=10 + margin | 0.6336 | 0.6677 | 0.6419 | 0.2253 | [−0.022, +0.008] | **[−0.027, −0.0004]** |
+| **Pre-game, window=20** | 0.6432 | 0.6770 | 0.6366 | 0.2227 | [−0.011, +0.017] | [−0.014, +0.006] |
+| Pre-game, window=20 + margin | 0.6481 | 0.6849 | 0.6326 | 0.2209 | [−0.005, +0.021] | [−0.006, +0.014] |
 
 Bold intervals exclude 0. The conclusions match §3a:
 - window=10 is worse than the baseline on AUC;
@@ -332,6 +336,8 @@ specific context features differ.
 - **Repo's own XGBoost protocol** (after the scikit-learn fix): 0.6977 test accuracy on the last 10%
   of `dataset_2012-26`. That was measured before the fix, inside the leaky 2024-26 seasons. It is
   inflated and should not be cited as a baseline.
+- **Game results checked against the logs (§10):** every dataset label and score now matches the
+  game logs; `Tests/test_dataset_labels.py` enforces it.
 
 ## 7. Schedule fatigue and travel (parent paper 3)
 
@@ -437,12 +443,12 @@ are the saved ones, untouched. Source: `results/pregame/schedule/metrics_w20.md`
 
 | Model | Split | n | Acc | Prec | Recall | F1 | AUC | Log loss | Brier |
 |---|---|---|---|---|---|---|---|---|---|
-| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6565 | 0.7580 | 0.7036 | 0.6797 | 0.6349 | 0.2221 |
-| Pre-game w20 (official) | test | 3,386 | 0.6435 | 0.6509 | 0.7931 | 0.7150 | 0.6749 | 0.6371 | 0.2229 |
-| Pre-game w20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6561 | 0.7894 | 0.7166 | 0.6838 | 0.6326 | 0.2209 |
-| Pre-game w20 + fatigue | test | 3,386 | 0.6409 | 0.6483 | 0.7936 | 0.7136 | 0.6754 | 0.6370 | 0.2229 |
-| Pre-game w20 + fatigue + travel | test | 3,386 | 0.6412 | 0.6527 | 0.7768 | 0.7094 | 0.6763 | 0.6364 | 0.2226 |
-| Repo + fatigue + travel | test | 3,386 | 0.6394 | 0.6571 | 0.7538 | 0.7021 | 0.6809 | 0.6339 | 0.2216 |
+| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6570 | 0.7577 | 0.7038 | 0.6793 | 0.6350 | 0.2221 |
+| Pre-game w20 (official) | test | 3,386 | 0.6435 | 0.6513 | 0.7928 | 0.7151 | 0.6746 | 0.6372 | 0.2230 |
+| Pre-game w20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6565 | 0.7891 | 0.7167 | 0.6836 | 0.6326 | 0.2209 |
+| Pre-game w20 + fatigue | test | 3,386 | 0.6409 | 0.6487 | 0.7933 | 0.7137 | 0.6751 | 0.6370 | 0.2229 |
+| Pre-game w20 + fatigue + travel | test | 3,386 | 0.6412 | 0.6532 | 0.7766 | 0.7095 | 0.6759 | 0.6365 | 0.2226 |
+| Repo + fatigue + travel | test | 3,386 | 0.6394 | 0.6575 | 0.7535 | 0.7023 | 0.6805 | 0.6340 | 0.2217 |
 | Baseline: repo season-to-date | validation | 1,681 | 0.6556 | 0.6576 | 0.7675 | 0.7083 | 0.7089 | 0.6221 | 0.2165 |
 | Pre-game w20 (official) | validation | 1,681 | 0.6419 | 0.6454 | 0.7609 | 0.6984 | 0.6987 | 0.6275 | 0.2189 |
 | Pre-game w20 + margin (ablation) | validation | 1,681 | 0.6466 | 0.6507 | 0.7587 | 0.7006 | 0.7107 | 0.6207 | 0.2157 |
@@ -492,7 +498,7 @@ exclude games with unknown travel.
 |---|---|---|---|---|---|
 | 1. neither team on a b2b | 2,445 | 0.566 | 1,193 | 0.556 | |
 | 2. away team only on a b2b | 458 | 0.620 | 205 | 0.585 | |
-| 3. home team only on a b2b | 339 | 0.466 | 192 | 0.453 | validation unreliable (n < 200) |
+| 3. home team only on a b2b | 339 | 0.469 | 192 | 0.453 | validation unreliable (n < 200) |
 | 4. both on a b2b | 144 | 0.576 | 91 | 0.505 | unreliable (n < 200) |
 | 5. home eastward net jet lag ≥ 1 h | 13 | 0.385 | 8 | 0.625 | no CI (n < 30); not interpretable |
 | 6. away travelled > 1,609 km | 727 | 0.550 | 378 | 0.542 | |
@@ -502,11 +508,11 @@ schedule models:
 
 | Slice | Split | Repo | Pre-game | Pre-game + fat. + travel | Repo + fat. + travel |
 |---|---|---|---|---|---|
-| 1 | test | 0.634 / 0.671 | 0.640 / 0.666 | 0.638 / 0.667 | 0.630 / 0.670 |
+| 1 | test | 0.635 / 0.671 | 0.640 / 0.666 | 0.639 / 0.667 | 0.631 / 0.671 |
 | 1 | val | 0.664 / 0.714 | 0.651 / 0.709 | 0.660 / 0.709 | 0.661 / 0.714 |
 | 2 | test | 0.662 / 0.682 | 0.666 / 0.678 | 0.655 / 0.679 | 0.672 / 0.685 |
 | 2 | val | 0.659 / 0.716 | 0.673 / 0.685 | 0.688 / 0.693 | 0.654 / 0.719 |
-| 3 | test | 0.637 / 0.721 | 0.637 / 0.700 | 0.631 / 0.698 | 0.649 / 0.727 |
+| 3 | test | 0.634 / 0.716 | 0.634 / 0.694 | 0.628 / 0.693 | 0.646 / 0.721 |
 | 3 | val | 0.630 / 0.714 | 0.604 / 0.699 | 0.599 / 0.697 | 0.630 / 0.715 |
 | 4 | test | 0.674 / 0.717 | 0.653 / 0.742 | 0.667 / 0.748 | 0.667 / 0.721 |
 | 4 | val | 0.593 / 0.650 | 0.527 / 0.621 | 0.538 / 0.626 | 0.593 / 0.653 |
@@ -517,7 +523,7 @@ schedule models:
 - **The schedule features do not help on back-to-back games specifically.** On slices 2–4 the
   schedule models are within noise of the models without them, in both directions.
 - **Slice 3 (home team only on a b2b) is the hardest situation for the pre-game models.** The home
-  team wins under half the time (0.466 test, 0.453 validation). The official pre-game model and
+  team wins under half the time (0.469 test, 0.453 validation). The official pre-game model and
   both pre-game schedule models trail the baseline on AUC there in both splits, by 0.016–0.026.
   Adding schedule features does not close the gap.
 - **Intervals that exclude zero, against the repo baseline.** 4 of 100 slice intervals (5 models ×
@@ -575,14 +581,15 @@ Logistic regression of home win on Bowman's schedule variables. Source:
   finding.
 
 **Raw home-win rate by back-to-back situation, all split games.** From the dataset's Days-Rest
-columns (n = 16,963), which reproduces the numbers we started from:
+columns (n = 16,957 after the §10 fix; the pre-fix n = 16,963 reproduced the numbers we started
+from, with 11,691 both rested and 0.499 for home b2b / away rested):
 
 | Situation | n | Home-win rate |
 |---|---|---|
 | home rested / away b2b | 2,956 | 0.619 |
-| both rested | 11,691 | 0.568 |
+| both rested | 11,685 | 0.568 |
 | both b2b | 890 | 0.583 |
-| home b2b / away rested | 1,426 | 0.499 |
+| home b2b / away rested | 1,426 | 0.500 |
 
 The same table by split, using the game-log b2b flags (16,940 games), is in
 `home_win_by_b2b_situation.csv`. The pattern holds in every split; validation's "both b2b" (n = 91)
@@ -668,13 +675,20 @@ Share of total mean |SHAP| by group:
   market prices back-to-backs, as far as these data can tell (§9e).
 - **Whether to follow up the home-on-b2b lean (§9c, §9d).** **Recommendation:** mention it as an
   open question only. None of the pre-registered tests is significant, and the time trend is
-  exploratory (p = 0.04). Checking it properly would need seasons after 2025-26 that no analysis
+  exploratory (p = 0.049). Checking it properly would need seasons after 2025-26 that no analysis
   here has looked at.
 - **Closing vs opening lines (§9a)** cannot be settled from the repo. If the report calls the
   benchmark "the closing line", someone needs to confirm the source first. Otherwise call it
   "a market line".
 
+- **Add the 59 missing 2023-24 test games (§10)?** They have odds in the correct table, game logs
+  and full TeamData snapshots. **Recommendation:** add them in a separate, labelled step after the
+  report's current numbers are settled. They would change the test set every model is scored on
+  (3,386 → about 3,445 games), so every test number would move again. Deciding needs the team.
+
 Resolved:
+- **Wrong game-result labels (§10):** two test labels fixed at the source, 11 scores corrected,
+  6 unplayed-game rows dropped; all saved models re-scored, previous files in `pre_label_fix/`.
 - **Baseline leakage in 2024-26:** fixed at the source and the rows regenerated. The corrected
   full-split results are primary (§3a), with the never-affected-seasons comparison kept as a
   secondary check (§3b).
@@ -689,7 +703,7 @@ Files: `results/pregame/market/`, code: `src/Pregame/market.py` and `market_anal
 was retrained and no earlier number changed; the saved models are only scored.
 
 **Short answer: as far as these data can tell, yes, the market prices it.**
-- **The market beats every model of ours by a wide, significant margin** (0.680 / 0.726 accuracy /
+- **The market beats every model of ours by a wide, significant margin** (0.679 / 0.725 accuracy /
   AUC on test, against 0.639–0.648 / 0.675–0.684 for ours).
 - **Back-to-backs carry no information beyond the market price.** Controlling for the market's
   probability, no back-to-back situation's odds multiplier differs significantly from 1 in train,
@@ -713,13 +727,13 @@ such as "Charlotte Bobcats" in 2015-16 and both Clippers spellings.
   - It matches 1,252 logged games and its Win_Margin agrees with the logs in 100% of them.
   - `odds_2023-24_new`, the table `Create_Games.py` picks, matches only 1,194 games.
     Its 4 Win_Margin errors (0 or 1 where the logs show 7, 13, ...) look like games scraped
-    before they finished.
+    before they finished. They were repaired in §10.
   - On the 1,193 games both tables hold, every spread and moneyline is identical, so `_new` is used
     only for the one game `2023-24` lacks.
 - **2024-25 and 2025-26:** the only tables (`2024-25`, `odds_2025-26`).
-- **Agreement with the logs:** Win_Margin equals the logged home margin in 99.6–100% of matched
-  rows in every table, and the dataset's home-win target agrees with the logged margin in 99.99% of
-  matched games.
+- **Agreement with the logs:** before the §10 repair, Win_Margin equaled the logged home margin in
+  99.6–100% of matched rows in every table, and the dataset's home-win target agreed with the logged
+  margin in 99.99% of matched games. After it, both are 100%.
 
 **Spread sign.** Spread is stored two ways:
 - **Through 2021-22: unsigned.** It is the favourite's line and is never negative, apart from one
@@ -772,10 +786,10 @@ rows are unchanged).
 
 | Model | Split | Acc | AUC | Log loss | Brier |
 |---|---|---|---|---|---|
-| **Market (devigged moneyline)** | test | **0.6796** | **0.7262** | **0.6028** | **0.2078** |
-| Baseline: repo season-to-date | test | 0.6400 | 0.6797 | 0.6349 | 0.2221 |
-| Pre-game w20 (official) | test | 0.6435 | 0.6749 | 0.6371 | 0.2229 |
-| Pre-game w20 + margin (ablation) | test | 0.6480 | 0.6838 | 0.6326 | 0.2209 |
+| **Market (devigged moneyline)** | test | **0.6790** | **0.7255** | **0.6036** | **0.2081** |
+| Baseline: repo season-to-date | test | 0.6400 | 0.6793 | 0.6350 | 0.2221 |
+| Pre-game w20 (official) | test | 0.6435 | 0.6746 | 0.6372 | 0.2230 |
+| Pre-game w20 + margin (ablation) | test | 0.6480 | 0.6836 | 0.6326 | 0.2209 |
 | **Market (devigged moneyline)** | validation | **0.6811** | **0.7420** | **0.5925** | **0.2040** |
 | Baseline: repo season-to-date | validation | 0.6556 | 0.7089 | 0.6221 | 0.2165 |
 | Pre-game w20 (official) | validation | 0.6419 | 0.6987 | 0.6275 | 0.2189 |
@@ -787,8 +801,8 @@ Paired bootstrap 95% CIs, market − model (all exclude zero):
 
 | Comparison | Test acc | Test AUC | Validation acc | Validation AUC |
 |---|---|---|---|---|
-| Market − repo baseline | [+0.025, +0.054] | [+0.035, +0.059] | [+0.006, +0.045] | [+0.017, +0.049] |
-| Market − pre-game w20 | [+0.021, +0.051] | [+0.038, +0.065] | [+0.019, +0.061] | [+0.024, +0.062] |
+| Market − repo baseline | [+0.024, +0.053] | [+0.035, +0.058] | [+0.006, +0.045] | [+0.017, +0.049] |
+| Market − pre-game w20 | [+0.020, +0.051] | [+0.037, +0.065] | [+0.019, +0.061] | [+0.024, +0.062] |
 
 The market is ahead of every model of ours by 2.5–4 accuracy points and 0.03–0.05 AUC. It is the
 ceiling to cite, not a model to beat with public box-score and schedule data.
@@ -804,18 +818,18 @@ than the market implies. The model was fitted separately on each split.
 
 | Situation | Train (n = 11,682) | Test (n = 3,380) | Validation (n = 1,681) |
 |---|---|---|---|
-| Away only on a b2b | 0.988 [0.889, 1.097] | 0.967 [0.774, 1.208] | 0.892 [0.639, 1.244] |
-| Home only on a b2b | 1.068 [0.917, 1.244] | 0.821 [0.640, 1.054] | 0.739 [0.528, 1.036] |
-| Both on a b2b | 1.124 [0.942, 1.342] | 1.127 [0.776, 1.638] | 0.757 [0.473, 1.212] |
-| logit(market) slope | 0.98 (×2.676) | 0.98 (×2.652) | 0.98 (×2.653) |
+| Away only on a b2b | 0.988 [0.889, 1.097] | 0.966 [0.774, 1.207] | 0.892 [0.639, 1.244] |
+| Home only on a b2b | 1.068 [0.917, 1.244] | 0.830 [0.647, 1.066] | 0.739 [0.528, 1.036] |
+| Both on a b2b | 1.124 [0.942, 1.342] | 1.124 [0.774, 1.633] | 0.757 [0.473, 1.212] |
+| logit(market) slope | 0.98 (×2.676) | 0.97 (×2.635) | 0.98 (×2.653) |
 
 - **No interval excludes 1.** Once the market price is known, being on a back-to-back tells you
   nothing more about who wins.
 - **The visitor-b2b effect is fully priced.** Its multiplier falls from 1.31 without the market
   (§7f) to 0.99 / 0.97 / 0.89 with it.
-- **The market is calibrated.** The slope on logit(market) is about 0.98, close to the 1.0 a
+- **The market is calibrated.** The slope on logit(market) is 0.97–0.98, close to the 1.0 a
   calibrated probability gives.
-- **Home-only b2b is the one consistent lean.** It is below 1 in test (0.82) and validation (0.74,
+- **Home-only b2b is the one consistent lean.** It is below 1 in test (0.83) and validation (0.74,
   p = 0.08), i.e. home teams on a b2b win a little less than the market implies. It is above 1 in
   train (1.07), and no interval excludes 1.
 
@@ -846,17 +860,17 @@ Labelled exploratory, not pre-registered, and not used to change any model. The 
 
 | Term | Odds multiplier [95% CI] | p |
 |---|---|---|
-| Visitor on a b2b, at 2018-19 | 1.331 [1.216, 1.457] | < 0.001 |
-| Home on a b2b, at 2018-19 | 0.824 [0.735, 0.923] | 0.001 |
-| Visitor b2b × season | 1.016 per season [0.993, 1.039] | 0.17 |
-| Home b2b × season | 0.973 per season [0.948, 0.999] | 0.04 |
+| Visitor on a b2b, at 2018-19 | 1.330 [1.215, 1.456] | < 0.001 |
+| Home on a b2b, at 2018-19 | 0.825 [0.736, 0.925] | 0.001 |
+| Visitor b2b × season | 1.015 per season [0.993, 1.038] | 0.18 |
+| Home b2b × season | 0.974 per season [0.948, 0.9999] | 0.049 |
 
 - **The visitor-b2b effect is stable over time.**
-- **The home-b2b penalty may be growing, by about 2.7% in odds per season.** The raw gap in home-win
+- **The home-b2b penalty may be growing, by about 2.6% in odds per season.** The raw gap in home-win
   rate (home only on a b2b minus both rested, `b2b_gap_by_season.csv`) ranges from −10.7 to +2.1
-  points in 2012-13 to 2020-21 (mean −3.8), then −17.6, −5.4, −10.8, −9.4 and −11.9 points in
+  points in 2012-13 to 2020-21 (mean −3.8), then −17.6, −5.4, −10.2, −9.4 and −11.9 points in
   2021-22 to 2025-26, each season on 62–150 games.
-- **Weak evidence.** p = 0.04 on one of two interactions examined is weak, and the latest seasons are
+- **Weak evidence.** p = 0.049 on one of two interactions examined is weak, and the latest seasons are
   also the test and validation periods. That is where the home-b2b lean against the market appears
   (§9c), so the two observations are not independent.
 
@@ -874,6 +888,97 @@ This is a hypothesis for later seasons, not a finding.
 - **For the USP:** our features and the market agree that back-to-backs matter. The market already
   knows, and it is a much stronger predictor than any public-data model here.
 
+## 10. Game-result label fix (2026-10-08)
+
+§9a found that `odds_2023-24_new`, the table `Create_Games.py` builds 2023-24 from, holds rows
+scraped before the game finished. Every dataset label and score was then checked against the game
+logs, for every season.
+
+**What was wrong** (`src/Pregame/label_audit.py`; 16,948 of 16,963 dataset rows match a logged game
+by date and franchise):
+
+| Problem | Rows | Split | Effect |
+|---|---|---|---|
+| Wrong label | 2 | test | 2024-03-28 Hawks vs Celtics and Pelicans vs Bucks: home wins stored as `Home-Team-Win = 0` (odds row scraped before the game, score 0, margin 0) |
+| Wrong score, correct label | 11 | 2 test, 7 train, 2 validation | two 2024-04-28 playoff games scraped mid-game (53 and 0 points; Phoenix's 0 label was right by luck); seven archive score typos from 2012-13 to 2016-17; two 2024-25 rows 3 points off |
+| Game not played that day | 6 | 1 test, 5 validation | postponed games stored with score 0 and label 0 (2023-02-01 DET–WAS, four January 2025 Los Angeles games, 2025-01-22 NOP–MIL) |
+
+`Score` is not a feature or a label, and none of the six unplayed rows was in any model: they have
+no logged game, so they were already among the 23 split rows dropped from every feature set.
+**So the only change to any evaluation is the two test labels.**
+
+The other 9 rows that match no logged game are correct:
+- 3 NBA Cup finals, which don't count and so are not in the logs;
+- 6 rows dated a day off: four 2017 playoff archive rows and two others. Each one's label and score
+  match the adjacent game.
+
+**Cause and fix** (same pattern as the §1 leakage fix):
+- **Cause.** `Get_Odds_Data.py` in daily mode fetched odds through *today*, so it stored games that
+  had not finished, and `Create_Games.py` turned a zero win margin into `Home-Team-Win = 0`.
+- **Code fix.**
+  - `Get_Odds_Data.py` now fetches through yesterday and skips any game without a final score.
+  - `Create_Games.py` (and `scripts/regenerate_2024_26.py`) skip odds rows without a final result.
+  - Tests in `Tests/test_get_odds_data.py` and `Tests/test_create_games.py` fail on the old code.
+- **Data repair** (`scripts/fix_game_results.py`):
+  - `--fix-odds` set Points and Win_Margin to the game-log values in the 14 odds rows that disagreed:
+    the 13 above plus one 2017-18 score typo with no dataset row.
+  - `--rebuild` recomputed `Score`, `Home-Team-Win` and `OU-Cover` for the 13 affected dataset rows
+    and dropped the 6 unplayed ones. The script asserts that every other column, including all team
+    features, is unchanged; the other 16,944 rows are untouched.
+- **Regression test.** `Tests/test_dataset_labels.py` compares every season's labels and scores
+  with the game logs. It failed in 2012-13, 2013-14, 2014-15, 2016-17, 2023-24 and 2024-25 before
+  the repair and passes now. It skips when `GameLogs.sqlite` is absent; regenerate it with
+  `python -m src.Pregame.game_logs`.
+
+**Re-scoring** (no model retrained): `train_xgb.py --rescore` scores the saved models with their
+recorded tuning results. `leakage_audit`, `schedule_experiments`, `schedule_replication` and
+`market_analysis` were re-run. The previous files are kept in `results/pregame/pre_label_fix/`
+(with a README).
+
+**What moved.** Only test-set numbers moved; train and validation labels were already correct.
+
+| Number | Before | After |
+|---|---|---|
+| Test home-win rate | 0.5638 | 0.5644 |
+| Test accuracy, every model | — | unchanged |
+| Baseline test AUC / log loss | 0.6797 / 0.6349 | 0.6793 / 0.6350 |
+| Pre-game w20 test AUC / log loss / Brier | 0.6749 / 0.6371 / 0.2229 | 0.6746 / 0.6372 / 0.2230 |
+| Pre-game w20 + margin test AUC | 0.6838 | 0.6836 |
+| Pre-game w20 + fatigue + travel test AUC | 0.6763 | 0.6759 |
+| Repo + fatigue + travel test AUC | 0.6809 | 0.6805 |
+| §3b never-affected seasons, baseline / w20 AUC | 0.6813 / 0.6774 | 0.6808 / 0.6770 |
+| §3b w10 vs baseline AUC CI | [−0.033, −0.005] | [−0.032, −0.004] |
+| W10 + margin vs baseline AUC CI, full test set (`leakage_audit.md`) | [−0.025, −0.0004] | [−0.025, −0.00003] |
+| §7e slice 3 test home-win rate; baseline accuracy / AUC | 0.466; 0.637 / 0.721 | 0.469; 0.634 / 0.716 |
+| §7f raw rate, home b2b / away rested (all split games) | 0.499 (n = 1,426) | 0.500 (n = 1,426) |
+| §9 market test accuracy / AUC / log loss | 0.6796 / 0.7262 / 0.6028 | 0.6790 / 0.7255 / 0.6036 |
+| §9c-a test home-only b2b multiplier | 0.821 [0.640, 1.054] | 0.830 [0.647, 1.066] |
+| §9d home b2b × season | 0.973 [0.948, 0.999], p = 0.044 | 0.974 [0.948, 0.9999], p = 0.049 |
+| §9d raw gap 2023-24, home only b2b | −10.8 points | −10.2 points |
+
+- **Precision, recall and F1** in the full-set tables moved by at most 0.0005 (compare
+  `pre_label_fix/` with the parent folder).
+- **No confidence interval changed side of zero** (195 accuracy / AUC difference CIs compared), and
+  no odds-multiplier or cover-rate CI changed side of 1 or 50%.
+- **Closest calls:**
+  - the w10 + margin test AUC interval now ends at −0.00003, still excluding zero;
+  - the exploratory home-b2b trend's upper bound is now 0.9999 (p = 0.049).
+- **Unchanged by construction:** SHAP rankings and plots (they read only features), the §7f odds
+  ratios (training games), training CV results, and the §9 cover rates (graded on the logged margin)
+  and match rates.
+
+**2023-24 games missing from the dataset (not added).**
+- The correct odds table (`2023-24`) has 1,252 games in the logs; the dataset has 1,177 of them.
+- The 75 missing are all regular season (0 playoff), dated 2023-10-24 to 2024-02-28, all in the test
+  period.
+  - **16 are opening-week games** (Oct 24–26) without a full 30-team TeamData snapshot (0, 4 or 28
+    rows). Every season drops these under the same rule, so they cannot be added.
+  - **59 are games `odds_2023-24_new` simply lacks.** Every one has a full 30-team snapshot in
+    `TeamData.sqlite`, so `Create_Games` could build them from the `2023-24` table. They would also
+    need new rows in `Data/splits/split_keys.csv` (test period).
+
+  See §8.
+
 ## Reproduce
 
 ```bash
@@ -886,6 +991,9 @@ for w in 10 20; do
   .venv/bin/python -m src.Pregame.shap_analysis --window $w
 done
 .venv/bin/python -m src.Pregame.leakage_audit
+# Game-result repair (§10; already applied to the committed data, shown for completeness)
+.venv/bin/python scripts/fix_game_results.py --fix-odds --rebuild
+for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --rescore; done
 # Schedule fatigue and travel (§7), window 20 only
 .venv/bin/python -m src.Pregame.schedule_features      # Data/pregame/schedule_features.csv
 .venv/bin/python -m src.Pregame.schedule_experiments   # trains the 3 new models if not saved
