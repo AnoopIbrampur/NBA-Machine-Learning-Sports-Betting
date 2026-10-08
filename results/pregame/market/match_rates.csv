@@ -1,0 +1,4 @@
+split,split_games,matched,with_moneylines,with_line,match_rate
+train,11873,11873,11872,11758,1.0
+test,3386,3386,3386,3379,1.0
+validation,1681,1681,1681,1681,1.0
