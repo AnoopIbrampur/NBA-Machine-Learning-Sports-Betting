@@ -1,0 +1,128 @@
+feature,rank,mean_abs_shap,group
+PLUS_MINUS_RANK,1,0.12462348,box-score stats
+PLUS_MINUS,2,0.10396505,box-score stats
+L_RANK.1,3,0.087453455,win record
+PLUS_MINUS.1,4,0.07270404,box-score stats
+PLUS_MINUS_RANK.1,5,0.06695759,box-score stats
+W_PCT,6,0.056108035,win record
+W_RANK,7,0.051681824,win record
+W_PCT_RANK.1,8,0.038624104,win record
+L_RANK,9,0.03596206,win record
+W_PCT.1,10,0.03577046,win record
+FG3A.1,11,0.034711234,box-score stats
+BLKA_RANK,12,0.030133434,box-score stats
+FG_PCT,13,0.021716407,box-score stats
+BLKA.1,14,0.020270707,box-score stats
+W_PCT_RANK,15,0.01819292,win record
+W,16,0.01776048,win record
+L.1,17,0.015353988,win record
+FG3M.1,18,0.01448232,box-score stats
+FG_PCT.1,19,0.013526236,box-score stats
+W_RANK.1,20,0.012592731,win record
+FG_PCT_RANK,21,0.012544011,box-score stats
+rest_diff,22,0.011849795,fatigue (incl. existing rest/b2b)
+PTS.1,23,0.010332945,box-score stats
+AST.1,24,0.00918982,box-score stats
+rest_bucket_away,25,0.009182464,fatigue (incl. existing rest/b2b)
+Days-Rest-Away,26,0.008873997,fatigue (incl. existing rest/b2b)
+b2b_prev_away_away,27,0.00814378,fatigue (incl. existing rest/b2b)
+FG_PCT_RANK.1,28,0.0077133523,box-score stats
+BLKA_RANK.1,29,0.0068869516,box-score stats
+DREB_RANK.1,30,0.006385478,box-score stats
+L,31,0.0060034934,win record
+BLKA,32,0.0056514223,box-score stats
+FG3A_RANK.1,33,0.005409365,box-score stats
+AST_RANK,34,0.005374159,box-score stats
+FGA_RANK.1,35,0.005073459,box-score stats
+games_last7_away,36,0.004658534,fatigue (incl. existing rest/b2b)
+W.1,37,0.004531181,win record
+DREB.1,38,0.0042571854,box-score stats
+FG3M_RANK,39,0.004141266,box-score stats
+BLK_RANK,40,0.004043972,box-score stats
+FGM.1,41,0.004027523,box-score stats
+REB_RANK,42,0.00376689,box-score stats
+three_in_four_away,43,0.00372236,fatigue (incl. existing rest/b2b)
+AST_RANK.1,44,0.003500734,box-score stats
+MIN_RANK,45,0.003497352,games played / minutes
+TOV_RANK,46,0.0034830594,box-score stats
+AST,47,0.0034815676,box-score stats
+DREB,48,0.0034534812,box-score stats
+travel_km_away,49,0.0034008196,travel
+BLK,50,0.003296992,box-score stats
+FT_PCT.1,51,0.0031930038,box-score stats
+PTS_RANK,52,0.003150191,box-score stats
+FGA,53,0.0031179907,box-score stats
+PTS,54,0.0030729538,box-score stats
+REB,55,0.0030339393,box-score stats
+GP,56,0.0028785663,games played / minutes
+FG3A,57,0.002812172,box-score stats
+TOV,58,0.0027028532,box-score stats
+OREB_RANK.1,59,0.002554195,box-score stats
+GP_RANK,60,0.0025276695,games played / minutes
+PFD.1,61,0.0023662418,box-score stats
+DREB_RANK,62,0.0023515283,box-score stats
+FGM_RANK,63,0.0023213301,box-score stats
+FG3_PCT_RANK,64,0.002313142,box-score stats
+OREB.1,65,0.0022559417,box-score stats
+FGM_RANK.1,66,0.0021990153,box-score stats
+FTM.1,67,0.0021355664,box-score stats
+FG3M_RANK.1,68,0.0020512664,box-score stats
+FG3A_RANK,69,0.0019416058,box-score stats
+PTS_RANK.1,70,0.0019214208,box-score stats
+PF_RANK,71,0.0018618162,box-score stats
+GP.1,72,0.0017820013,games played / minutes
+REB_RANK.1,73,0.0017414826,box-score stats
+PF.1,74,0.0016198416,box-score stats
+consec_away_home,75,0.0015889363,fatigue (incl. existing rest/b2b)
+FGM,76,0.0015678653,box-score stats
+BLK_RANK.1,77,0.0015566571,box-score stats
+STL_RANK.1,78,0.0015165788,box-score stats
+MIN.1,79,0.0014967946,games played / minutes
+FG3_PCT.1,80,0.001485452,box-score stats
+consec_away_away,81,0.0014741275,fatigue (incl. existing rest/b2b)
+FG3M,82,0.0014722113,box-score stats
+BLK.1,83,0.0014283397,box-score stats
+FGA_RANK,84,0.0014235826,box-score stats
+FTM_RANK,85,0.0013541401,box-score stats
+FG3_PCT_RANK.1,86,0.0013395962,box-score stats
+MIN,87,0.0012904082,games played / minutes
+FTA.1,88,0.0012362731,box-score stats
+FTA,89,0.0011775919,box-score stats
+PF_RANK.1,90,0.0011460305,box-score stats
+FT_PCT_RANK.1,91,0.0011322942,box-score stats
+GP_RANK.1,92,0.001098281,games played / minutes
+STL.1,93,0.001079406,box-score stats
+FGA.1,94,0.0010448444,box-score stats
+PFD_RANK.1,95,0.0010179906,box-score stats
+FTM_RANK.1,96,0.0010149608,box-score stats
+REB.1,97,0.000979739,box-score stats
+FG3_PCT,98,0.0009757848,box-score stats
+STL_RANK,99,0.00096138864,box-score stats
+OREB,100,0.00094017806,box-score stats
+FT_PCT,101,0.00093866646,box-score stats
+PFD,102,0.00087511016,box-score stats
+MIN_RANK.1,103,0.00083889463,games played / minutes
+STL,104,0.00083877775,box-score stats
+FT_PCT_RANK,105,0.0007754506,box-score stats
+FTA_RANK.1,106,0.00076948694,box-score stats
+OREB_RANK,107,0.0007634593,box-score stats
+games_last7_home,108,0.00075700594,fatigue (incl. existing rest/b2b)
+PFD_RANK,109,0.00071545463,box-score stats
+FTM,110,0.00068180496,box-score stats
+PF,111,0.0006816998,box-score stats
+travel_km_home,112,0.00059940753,travel
+TOV_RANK.1,113,0.0005886811,box-score stats
+TOV.1,114,0.000563522,box-score stats
+tz_shift_away,115,0.0005611459,travel
+b2b_prev_away_home,116,0.00047461942,fatigue (incl. existing rest/b2b)
+first_leg_b2b_home,117,0.0003928932,fatigue (incl. existing rest/b2b)
+Days-Rest-Home,118,0.00038873716,fatigue (incl. existing rest/b2b)
+FTA_RANK,119,0.00037111418,box-score stats
+visitor_long_trip,120,0.00023304373,travel
+tz_shift_home,121,0.00018143089,travel
+first_leg_b2b_away,122,0.0,fatigue (incl. existing rest/b2b)
+three_in_four_home,123,0.0,fatigue (incl. existing rest/b2b)
+rest_bucket_home,124,0.0,fatigue (incl. existing rest/b2b)
+jet_lag_home,125,0.0,travel
+jet_lag_away,126,0.0,travel
+home_east_b2b,127,0.0,travel

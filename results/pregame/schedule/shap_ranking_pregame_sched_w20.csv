@@ -1,0 +1,33 @@
+feature,rank,mean_abs_shap,group
+win_pct_home,1,0.19991925,win record
+win_pct_away,2,0.16035472,win record
+home_win_pct_at_home,3,0.1404626,win record
+away_win_pct_on_road,4,0.1086414,win record
+2P%_diff,5,0.10591778,box-score stats
+FG%_diff,6,0.068110205,box-score stats
+DRB_diff,7,0.036456145,box-score stats
+BLK_diff,8,0.0300556,box-score stats
+TOV_diff,9,0.025640007,box-score stats
+STL_diff,10,0.021797393,box-score stats
+FT%_diff,11,0.019544149,box-score stats
+3P%_diff,12,0.018534645,box-score stats
+rest_diff,13,0.017151099,fatigue (incl. existing rest/b2b)
+rest_days_away,14,0.014826303,fatigue (incl. existing rest/b2b)
+AST_diff,15,0.0098694395,box-score stats
+b2b_prev_away_away,16,0.008879004,fatigue (incl. existing rest/b2b)
+games_last7_away,17,0.0077522136,fatigue (incl. existing rest/b2b)
+three_in_four_away,18,0.007564903,fatigue (incl. existing rest/b2b)
+PF_diff,19,0.0071025826,box-score stats
+b2b_away,20,0.004760193,fatigue (incl. existing rest/b2b)
+ORB_diff,21,0.004293009,box-score stats
+rest_bucket_away,22,0.0039707227,fatigue (incl. existing rest/b2b)
+consec_away_away,23,0.0032964689,fatigue (incl. existing rest/b2b)
+consec_away_home,24,0.003112612,fatigue (incl. existing rest/b2b)
+games_last7_home,25,0.00310706,fatigue (incl. existing rest/b2b)
+rest_days_home,26,0.0018908959,fatigue (incl. existing rest/b2b)
+first_leg_b2b_away,27,0.0017510497,fatigue (incl. existing rest/b2b)
+rest_bucket_home,28,0.0008600613,fatigue (incl. existing rest/b2b)
+b2b_home,29,0.0005526883,fatigue (incl. existing rest/b2b)
+three_in_four_home,30,0.00031971277,fatigue (incl. existing rest/b2b)
+first_leg_b2b_home,31,0.00022095525,fatigue (incl. existing rest/b2b)
+b2b_prev_away_home,32,9.033503e-05,fatigue (incl. existing rest/b2b)

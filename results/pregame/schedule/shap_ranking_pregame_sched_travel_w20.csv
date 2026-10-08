@@ -1,0 +1,41 @@
+feature,rank,mean_abs_shap,group
+win_pct_home,1,0.21655388,win record
+win_pct_away,2,0.17241211,win record
+home_win_pct_at_home,3,0.14240497,win record
+2P%_diff,4,0.12714608,box-score stats
+away_win_pct_on_road,5,0.11725418,win record
+FG%_diff,6,0.054459754,box-score stats
+DRB_diff,7,0.04382073,box-score stats
+BLK_diff,8,0.037569083,box-score stats
+TOV_diff,9,0.03580347,box-score stats
+STL_diff,10,0.030845487,box-score stats
+FT%_diff,11,0.026310228,box-score stats
+3P%_diff,12,0.023938194,box-score stats
+rest_diff,13,0.021944568,fatigue (incl. existing rest/b2b)
+rest_days_away,14,0.01986595,fatigue (incl. existing rest/b2b)
+games_last7_away,15,0.016743397,fatigue (incl. existing rest/b2b)
+travel_km_away,16,0.01337644,travel
+PF_diff,17,0.012211072,box-score stats
+b2b_prev_away_away,18,0.009975513,fatigue (incl. existing rest/b2b)
+three_in_four_away,19,0.007890836,fatigue (incl. existing rest/b2b)
+ORB_diff,20,0.0067978515,box-score stats
+AST_diff,21,0.0067575583,box-score stats
+consec_away_away,22,0.005641062,fatigue (incl. existing rest/b2b)
+first_leg_b2b_away,23,0.0050607594,fatigue (incl. existing rest/b2b)
+b2b_away,24,0.0039953412,fatigue (incl. existing rest/b2b)
+games_last7_home,25,0.0037282845,fatigue (incl. existing rest/b2b)
+tz_shift_away,26,0.00362602,travel
+travel_km_home,27,0.0028634358,travel
+consec_away_home,28,0.002579086,fatigue (incl. existing rest/b2b)
+rest_days_home,29,0.0016902277,fatigue (incl. existing rest/b2b)
+tz_shift_home,30,0.0010065683,travel
+rest_bucket_away,31,0.00054791,fatigue (incl. existing rest/b2b)
+b2b_prev_away_home,32,0.00054364937,fatigue (incl. existing rest/b2b)
+first_leg_b2b_home,33,0.0003578156,fatigue (incl. existing rest/b2b)
+rest_bucket_home,34,0.0002676944,fatigue (incl. existing rest/b2b)
+visitor_long_trip,35,0.00019912802,travel
+three_in_four_home,36,0.00019687266,fatigue (incl. existing rest/b2b)
+home_east_b2b,37,0.00011261025,travel
+b2b_home,38,0.0,fatigue (incl. existing rest/b2b)
+jet_lag_home,39,0.0,travel
+jet_lag_away,40,0.0,travel

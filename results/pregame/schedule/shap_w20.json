@@ -1,0 +1,105 @@
+{
+  "best": "pregame_sched",
+  "pregame_sched": {
+    "group_shares": {
+      "win record": 0.5877458453178406,
+      "box-score stats": 0.3349914848804474,
+      "fatigue (incl. existing rest/b2b)": 0.07726261019706726
+    },
+    "n": 3386,
+    "b2b_away_mean_shap_by_value": [
+      {
+        "x": 0.0,
+        "size": 2784,
+        "mean": -0.0035000001080334187
+      },
+      {
+        "x": 1.0,
+        "size": 602,
+        "mean": 0.010599999688565731
+      }
+    ]
+  },
+  "repo_sched_travel": {
+    "group_shares": {
+      "box-score stats": 0.6077572107315063,
+      "win record": 0.3298444151878357,
+      "fatigue (incl. existing rest/b2b)": 0.04470480605959892,
+      "games played / minutes": 0.013374808244407177,
+      "travel": 0.004318698775023222
+    },
+    "n": 3386,
+    "rest_bucket_away_mean_shap_by_value": [
+      {
+        "x": 1.0,
+        "size": 602,
+        "mean": 0.020800000056624413
+      },
+      {
+        "x": 2.0,
+        "size": 2155,
+        "mean": -0.0066999997943639755
+      },
+      {
+        "x": 3.0,
+        "size": 629,
+        "mean": -0.006599999964237213
+      }
+    ],
+    "jet_lag_home_mean_shap_by_value": [
+      {
+        "x": -1.0,
+        "size": 20,
+        "mean": 0.0
+      },
+      {
+        "x": 0.0,
+        "size": 3336,
+        "mean": 0.0
+      },
+      {
+        "x": 1.0,
+        "size": 13,
+        "mean": 0.0
+      }
+    ]
+  },
+  "pregame_sched_travel": {
+    "group_shares": {
+      "win record": 0.5513185262680054,
+      "box-score stats": 0.3448025584220886,
+      "fatigue (incl. existing rest/b2b)": 0.08587262779474258,
+      "travel": 0.018006153404712677
+    },
+    "n": 3386,
+    "b2b_away_mean_shap_by_value": [
+      {
+        "x": 0.0,
+        "size": 2784,
+        "mean": -0.002899999963119626
+      },
+      {
+        "x": 1.0,
+        "size": 602,
+        "mean": 0.008899999782443047
+      }
+    ],
+    "jet_lag_home_mean_shap_by_value": [
+      {
+        "x": -1.0,
+        "size": 20,
+        "mean": 0.0
+      },
+      {
+        "x": 0.0,
+        "size": 3336,
+        "mean": 0.0
+      },
+      {
+        "x": 1.0,
+        "size": 13,
+        "mean": 0.0
+      }
+    ]
+  }
+}
