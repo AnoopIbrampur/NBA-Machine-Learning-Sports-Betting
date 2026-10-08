@@ -18,7 +18,8 @@ from sklearn.model_selection import TimeSeriesSplit
 
 from src.Pregame.features import ABLATION_FEATURES
 from src.Pregame.paths import (DATASET_DB, DATASET_TABLE, GAME_KEY, RESULTS_DIR, SPLIT_KEYS,
-                               features_path, model_path)
+                               features_path, model_path, schedule_features_path)
+from src.Pregame.schedule_features import FATIGUE_FEATURES, SCHEDULE_FEATURES
 
 TARGET = "Home-Team-Win"
 # Same columns XGBoost_Model_ML.py drops: identifiers, the outcome, and betting-market fields.
@@ -35,8 +36,13 @@ PAPER_XGBOOST = {
 }
 
 
-def load_games(window):
-    """Repo dataset rows that also have pre-game features, labelled with their split."""
+def load_games(window, schedule=False):
+    """Repo dataset rows that also have pre-game features, labelled with their split.
+
+    With schedule=True the window-independent schedule features are merged in as well, adding the
+    feature sets pregame_sched, pregame_sched_travel and repo_sched_travel. The three original
+    feature sets keep exactly the same columns either way.
+    """
     with sqlite3.connect(DATASET_DB) as con:
         repo = pd.read_sql_query(f'SELECT * FROM "{DATASET_TABLE}"', con)
     splits = pd.read_csv(SPLIT_KEYS)
@@ -54,6 +60,15 @@ def load_games(window):
         "pregame": [c for c in pregame.columns if c not in PREGAME_ID_COLUMNS + ABLATION_FEATURES],
         "pregame_margin": [c for c in pregame.columns if c not in PREGAME_ID_COLUMNS],
     }
+    if schedule:
+        sched = pd.read_csv(schedule_features_path()).drop(columns=["GAME_ID", "SEASON"])
+        games = games.merge(sched, on=GAME_KEY, how="left", validate="one_to_one", indicator=True)
+        if (games["_merge"] != "both").any():
+            raise ValueError("Some games have no schedule features; rebuild with src.Pregame.schedule_features")
+        games = games.drop(columns="_merge")
+        feature_columns["pregame_sched"] = feature_columns["pregame"] + FATIGUE_FEATURES
+        feature_columns["pregame_sched_travel"] = feature_columns["pregame"] + SCHEDULE_FEATURES
+        feature_columns["repo_sched_travel"] = feature_columns["repo"] + SCHEDULE_FEATURES
     return games.drop(columns="_date").reset_index(drop=True), feature_columns
 
 

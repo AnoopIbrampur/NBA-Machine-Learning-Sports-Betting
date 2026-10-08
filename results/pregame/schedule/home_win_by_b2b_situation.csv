@@ -1,0 +1,17 @@
+split,situation,n,home_win_rate
+all,home rested / away b2b,2955,0.6192893401015228
+all,both rested,11669,0.5680006855771703
+all,both b2b,887,0.5839909808342728
+all,home b2b / away rested,1429,0.4989503149055283
+test,home rested / away b2b,458,0.6200873362445415
+test,both rested,2445,0.5660531697341513
+test,both b2b,144,0.5763888888888888
+test,home b2b / away rested,339,0.46607669616519176
+train,home rested / away b2b,2292,0.6221640488656196
+train,both rested,8031,0.5704146432573777
+train,both b2b,652,0.5966257668711656
+train,home b2b / away rested,898,0.5211581291759465
+validation,home rested / away b2b,205,0.5853658536585366
+validation,both rested,1193,0.5557418273260687
+validation,both b2b,91,0.5054945054945055
+validation,home b2b / away rested,192,0.453125

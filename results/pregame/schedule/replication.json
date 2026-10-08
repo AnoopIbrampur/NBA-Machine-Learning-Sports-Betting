@@ -1,0 +1,125 @@
+{
+  "n_games": 11650,
+  "excluded_bubble": 172,
+  "excluded_offsite": 18,
+  "excluded_missing": 33,
+  "primary_control": "team_season_dummies",
+  "fits": {
+    "team_season_dummies": {
+      "converged": true,
+      "rank": 598,
+      "n_columns": 598,
+      "max_se": 1.0842317233114773,
+      "stable": 1.0
+    },
+    "season_to_date_win_pct": {
+      "converged": true,
+      "rank": 11,
+      "n_columns": 11,
+      "max_se": 0.16532506927435273,
+      "stable": 1.0
+    }
+  },
+  "odds": {
+    "team_season_dummies": {
+      "away_b2b": {
+        "odds_multiplier": 1.3109694846679256,
+        "ci_low": 1.1798650426865271,
+        "ci_high": 1.4566420120534957,
+        "p_value": 4.7381098824533676e-07
+      },
+      "home_b2b": {
+        "odds_multiplier": 0.8971613771390332,
+        "ci_low": 0.7804935496587608,
+        "ci_high": 1.0312686594039322,
+        "p_value": 0.12681618684079132
+      },
+      "home_east_b2b": {
+        "odds_multiplier": 0.8640000105266594,
+        "ci_low": 0.604935648314954,
+        "ci_high": 1.2340089731352903,
+        "p_value": 0.4215167636897792
+      },
+      "visitor_long_trip": {
+        "odds_multiplier": 1.3194016527247072,
+        "ci_low": 1.0345281480122765,
+        "ci_high": 1.6827195321436834,
+        "p_value": 0.025516301041930797
+      },
+      "away_3plus_week": {
+        "odds_multiplier": 0.9948513264497141,
+        "ci_low": 0.8804064156292667,
+        "ci_high": 1.124173045730648,
+        "p_value": 0.934021487837354
+      },
+      "home_4plus_week": {
+        "odds_multiplier": 1.040684847859517,
+        "ci_low": 0.9400410549477947,
+        "ci_high": 1.1521038861696653,
+        "p_value": 0.44220938260425224
+      },
+      "away_rest3plus": {
+        "odds_multiplier": 0.9156729285628106,
+        "ci_low": 0.8111449380255709,
+        "ci_high": 1.0336708925826548,
+        "p_value": 0.15430682107554655
+      },
+      "home_rest3plus": {
+        "odds_multiplier": 1.0700445411165718,
+        "ci_low": 0.9571572422090999,
+        "ci_high": 1.196245788550634,
+        "p_value": 0.23397752329080213
+      }
+    },
+    "season_to_date_win_pct": {
+      "away_b2b": {
+        "odds_multiplier": 1.2894715305547262,
+        "ci_low": 1.1720278599361633,
+        "ci_high": 1.418683706206192,
+        "p_value": 1.8103827033246634e-07
+      },
+      "home_b2b": {
+        "odds_multiplier": 0.8853000959013849,
+        "ci_low": 0.7803068713214238,
+        "ci_high": 1.0044205537697446,
+        "p_value": 0.058559933168519665
+      },
+      "home_east_b2b": {
+        "odds_multiplier": 0.9050960833131317,
+        "ci_low": 0.6545905501871524,
+        "ci_high": 1.2514676843326815,
+        "p_value": 0.5464155213345883
+      },
+      "visitor_long_trip": {
+        "odds_multiplier": 1.154561687421134,
+        "ci_low": 0.9304751171712665,
+        "ci_high": 1.432615086057564,
+        "p_value": 0.19174501495645058
+      },
+      "away_3plus_week": {
+        "odds_multiplier": 0.9935188512556489,
+        "ci_low": 0.8881722574627864,
+        "ci_high": 1.111360661748323,
+        "p_value": 0.9094768006120737
+      },
+      "home_4plus_week": {
+        "odds_multiplier": 0.999708854908358,
+        "ci_low": 0.9123343285250626,
+        "ci_high": 1.095451265324963,
+        "p_value": 0.9950210435376647
+      },
+      "away_rest3plus": {
+        "odds_multiplier": 0.9618710055701694,
+        "ci_low": 0.8614050894254571,
+        "ci_high": 1.0740542895720049,
+        "p_value": 0.4897622865269228
+      },
+      "home_rest3plus": {
+        "odds_multiplier": 1.0659474354929532,
+        "ci_low": 0.9629299486519166,
+        "ci_high": 1.1799860798022983,
+        "p_value": 0.21812415256664708
+      }
+    }
+  }
+}
