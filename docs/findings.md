@@ -661,7 +661,7 @@ Resolved:
 
 ```bash
 python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
-.venv/bin/python -m unittest Tests.test_pregame_features Tests.test_get_data Tests.test_dataset_leakage
+.venv/bin/python -m unittest discover -s Tests -t .   # all tests
 .venv/bin/python -m src.Pregame.game_logs            # download game logs (cached)
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
@@ -670,7 +670,6 @@ for w in 10 20; do
 done
 .venv/bin/python -m src.Pregame.leakage_audit
 # Schedule fatigue and travel (§7), window 20 only
-.venv/bin/python -m unittest Tests.test_schedule_features
 .venv/bin/python -m src.Pregame.schedule_features      # Data/pregame/schedule_features.csv
 .venv/bin/python -m src.Pregame.schedule_experiments   # trains the 3 new models if not saved
 .venv/bin/python -m src.Pregame.schedule_replication
