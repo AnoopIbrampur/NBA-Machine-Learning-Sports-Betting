@@ -11,4 +11,6 @@ Schedule fatigue and travel (window 20):
     python -m src.Pregame.schedule_experiments
     python -m src.Pregame.schedule_replication
     python -m src.Pregame.schedule_shap
+Betting-market benchmark and back-to-back pricing (window 20):
+    python -m src.Pregame.market_analysis
 """

@@ -35,6 +35,18 @@ flags into a full fatigue and travel feature group, following parent paper 3 (Bo
 - **Partial replication of Bowman.** On our training seasons the visitor-b2b odds ratio is
   1.31 [1.18, 1.46], against Bowman's 1.51. The models already capture this through rest days.
 
+**The betting market prices back-to-backs (§9), as far as these data can tell.**
+- **The market is far ahead of us.** The devigged moneyline scores 0.680 / 0.726 accuracy / AUC on
+  test and 0.681 / 0.742 on validation. That is significantly above every model of ours (all CIs
+  exclude zero); it is a reference row, not our model.
+- **No back-to-back situation adds information beyond the market price.** With the market's
+  probability controlled for, no situation's odds multiplier differs from 1 in train, test or
+  validation.
+- **Home cover rates against the spread are within chance of 50% everywhere.**
+- **One lean, not significant.** A home team on a b2b against a rested visitor covers 48.2% / 45.4% /
+  42.9% (train / test / validation), the same direction as the 45.86% Ashman, Bowman & Lambrinos
+  reported for 1990-2009.
+
 ## 1. What the repo's baseline actually is
 
 - **Source:** `src/Process-Data/Get_Data.py` downloads stats.nba.com `leaguedashteamstats` with
@@ -650,12 +662,217 @@ Share of total mean |SHAP| by group:
 
   The team needs to decide this, and how to frame the USP to the professor (§7h).
 
+- **How to use the market benchmark (§9) in the report.** **Recommendation:** show it as a
+  separate reference row under the main results table, never as a model of ours. It is 2.5–4
+  accuracy points and 0.03–0.05 AUC above every model, all CIs excluding zero. Say plainly that the
+  market prices back-to-backs, as far as these data can tell (§9e).
+- **Whether to follow up the home-on-b2b lean (§9c, §9d).** **Recommendation:** mention it as an
+  open question only. None of the pre-registered tests is significant, and the time trend is
+  exploratory (p = 0.04). Checking it properly would need seasons after 2025-26 that no analysis
+  here has looked at.
+- **Closing vs opening lines (§9a)** cannot be settled from the repo. If the report calls the
+  benchmark "the closing line", someone needs to confirm the source first. Otherwise call it
+  "a market line".
+
 Resolved:
 - **Baseline leakage in 2024-26:** fixed at the source and the rows regenerated. The corrected
   full-split results are primary (§3a), with the never-affected-seasons comparison kept as a
   secondary check (§3b).
 - **Scoring margin:** stays an ablation only, not part of the official feature set (§2a).
 - **SHAP for window=20:** done. The ranking is stable against window=10 (§5).
+
+## 9. Does the betting market price back-to-backs?
+
+§7 found that schedule features do not improve our predictions. This section asks a different
+question with data already in the repo: does the betting market fully price back-to-backs?
+Files: `results/pregame/market/`, code: `src/Pregame/market.py` and `market_analysis.py`. No model
+was retrained and no earlier number changed; the saved models are only scored.
+
+**Short answer: as far as these data can tell, yes, the market prices it.**
+- **The market beats every model of ours by a wide, significant margin** (0.680 / 0.726 accuracy /
+  AUC on test, against 0.639–0.648 / 0.675–0.684 for ours).
+- **Back-to-backs carry no information beyond the market price.** Controlling for the market's
+  probability, no back-to-back situation's odds multiplier differs significantly from 1 in train,
+  test or validation.
+- **Home cover rates against the spread stay within chance of 50%** in every situation and split.
+- **One lean, not significant.** The home team on a b2b against a rested visitor covers only
+  48.2% / 45.4% / 42.9% (train / test / validation). That is the same direction as Ashman, Bowman &
+  Lambrinos (2010, 45.86%), but each CI includes 50%.
+
+### 9a. The odds data
+
+`Data/OddsData.sqlite` has one or two tables per season. Each was matched to the game logs by date
+and franchise `TEAM_ID`; matching by team name fails because the odds use era-inconsistent names,
+such as "Charlotte Bobcats" in 2015-16 and both Clippers spellings.
+
+**Which table is correct, per season** (`odds_tables.csv`)
+- **2012-13 to 2022-23: `odds_<season>_new`.** The legacy `odds_<season>` tables hold exactly the
+  same values. Only their date is an unparseable season prefix ("2012-13-1030"), which
+  `Fix_Odds_Date_Format.py` rewrote into the `_new` copies.
+- **2023-24: `2023-24`.**
+  - It matches 1,252 logged games and its Win_Margin agrees with the logs in 100% of them.
+  - `odds_2023-24_new`, the table `Create_Games.py` picks, matches only 1,194 games.
+    Its 4 Win_Margin errors (0 or 1 where the logs show 7, 13, ...) look like games scraped
+    before they finished.
+  - On the 1,193 games both tables hold, every spread and moneyline is identical, so `_new` is used
+    only for the one game `2023-24` lacks.
+- **2024-25 and 2025-26:** the only tables (`2024-25`, `odds_2025-26`).
+- **Agreement with the logs:** Win_Margin equals the logged home margin in 99.6–100% of matched
+  rows in every table, and the dataset's home-win target agrees with the logged margin in 99.99% of
+  matched games.
+
+**Spread sign.** Spread is stored two ways:
+- **Through 2021-22: unsigned.** It is the favourite's line and is never negative, apart from one
+  stray value; "PK" means 0.
+- **From 2022-23: signed.** `Get_Odds_Data.py` stores SBR's `away_spread`, so positive means the home
+  team is favoured.
+
+Both are converted to `home_line`, the market's expected home margin (positive = home favoured).
+Unsigned lines take their side from the moneyline favourite. When the two moneylines are equal
+(e.g. −110/−110) and the spread is non-zero, the side is unknown and the line is left missing.
+That leaves 113 train and 7 test games without a line.
+
+The convention is checked against results in every season (`Tests/test_market.py`):
+- the line's mean absolute error against the final home margin is 9.2–10.9 points;
+- flipping the sign makes it 13.4–17.2 points;
+- the mean residual is within ±0.5 points.
+
+Flipping either convention in the code makes the test fail. In the signed seasons the spread and the
+moneyline favourite disagree in 1–6 games per season, all with |spread| ≤ 1.5; the spread's own
+sign is kept.
+
+**Moneyline to probability.** Each American moneyline is converted to its implied probability
+(−m → m/(m+100), +m → 100/(m+100)). The bookmaker margin is removed proportionally:
+p_home = q_home / (q_home + q_away). The median overround is 3.5–4.2% per season. In about 3% of
+games both moneylines are negative; these are near-pick'em prices like −110/−110, not errors.
+
+**Closing lines? Unknown.**
+- `notes.txt` points to the sportsbookreviewsonline.com archive for the historical seasons, which
+  publishes opening and closing lines. Which one the repo stored is not recorded.
+- 2023-24 onward come from `sbrscrape` (default book FanDuel), apparently scraped after the games;
+  that page normally shows the latest line, but this cannot be confirmed.
+- The market's accuracy and log loss are what one expects from closing lines, but that does not
+  prove it. Treat this as "a market line, probably close to closing".
+
+**Match rate** (`match_rates.csv`):
+
+| Split | Split games | Matched to odds | With both moneylines | With a spread line |
+|---|---|---|---|---|
+| train | 11,873 | 11,873 (100%) | 11,872 | 11,758 |
+| test | 3,386 | 3,386 (100%) | 3,386 | 3,379 |
+| validation | 1,681 | 1,681 (100%) | 1,681 | 1,681 |
+
+Every split game matches. A game without moneylines (one in train) or without a line is dropped from
+that comparison for every row equally.
+
+### 9b. Market benchmark (reference row, not a model of ours)
+
+Same 3,386 test and 1,681 validation games as §3a and §7c (every game has moneylines, so the model
+rows are unchanged).
+
+| Model | Split | Acc | AUC | Log loss | Brier |
+|---|---|---|---|---|---|
+| **Market (devigged moneyline)** | test | **0.6796** | **0.7262** | **0.6028** | **0.2078** |
+| Baseline: repo season-to-date | test | 0.6400 | 0.6797 | 0.6349 | 0.2221 |
+| Pre-game w20 (official) | test | 0.6435 | 0.6749 | 0.6371 | 0.2229 |
+| Pre-game w20 + margin (ablation) | test | 0.6480 | 0.6838 | 0.6326 | 0.2209 |
+| **Market (devigged moneyline)** | validation | **0.6811** | **0.7420** | **0.5925** | **0.2040** |
+| Baseline: repo season-to-date | validation | 0.6556 | 0.7089 | 0.6221 | 0.2165 |
+| Pre-game w20 (official) | validation | 0.6419 | 0.6987 | 0.6275 | 0.2189 |
+| Pre-game w20 + margin (ablation) | validation | 0.6466 | 0.7107 | 0.6207 | 0.2157 |
+
+The §7 schedule models are in `market.md`, unchanged from §7c.
+
+Paired bootstrap 95% CIs, market − model (all exclude zero):
+
+| Comparison | Test acc | Test AUC | Validation acc | Validation AUC |
+|---|---|---|---|---|
+| Market − repo baseline | [+0.025, +0.054] | [+0.035, +0.059] | [+0.006, +0.045] | [+0.017, +0.049] |
+| Market − pre-game w20 | [+0.021, +0.051] | [+0.038, +0.065] | [+0.019, +0.061] | [+0.024, +0.062] |
+
+The market is ahead of every model of ours by 2.5–4 accuracy points and 0.03–0.05 AUC. It is the
+ceiling to cite, not a model to beat with public box-score and schedule data.
+
+### 9c. Is the back-to-back priced in? (fixed in advance)
+
+The same four situations as §7, from the existing `b2b_home` / `b2b_away` flags. The 172 restart
+games and 24 off-site games are excluded, as in §7f.
+
+**a. Logistic regression of home win on the situation dummies plus logit(market probability).**
+The reference is "neither team on a b2b". A multiplier above 1 means the home team wins more often
+than the market implies. The model was fitted separately on each split.
+
+| Situation | Train (n = 11,682) | Test (n = 3,380) | Validation (n = 1,681) |
+|---|---|---|---|
+| Away only on a b2b | 0.988 [0.889, 1.097] | 0.967 [0.774, 1.208] | 0.892 [0.639, 1.244] |
+| Home only on a b2b | 1.068 [0.917, 1.244] | 0.821 [0.640, 1.054] | 0.739 [0.528, 1.036] |
+| Both on a b2b | 1.124 [0.942, 1.342] | 1.127 [0.776, 1.638] | 0.757 [0.473, 1.212] |
+| logit(market) slope | 0.98 (×2.676) | 0.98 (×2.652) | 0.98 (×2.653) |
+
+- **No interval excludes 1.** Once the market price is known, being on a back-to-back tells you
+  nothing more about who wins.
+- **The visitor-b2b effect is fully priced.** Its multiplier falls from 1.31 without the market
+  (§7f) to 0.99 / 0.97 / 0.89 with it.
+- **The market is calibrated.** The slope on logit(market) is about 0.98, close to the 1.0 a
+  calibrated probability gives.
+- **Home-only b2b is the one consistent lean.** It is below 1 in test (0.82) and validation (0.74,
+  p = 0.08), i.e. home teams on a b2b win a little less than the market implies. It is above 1 in
+  train (1.07), and no interval excludes 1.
+
+**b. Home cover rate against the spread.** Cover means logged home margin − home line > 0. Pushes
+are excluded from the rate but counted. The CI is exact binomial, tested against 50%.
+
+| Situation | Train cover [95% CI] (decided / pushes) | Test | Validation |
+|---|---|---|---|
+| Home rested / away b2b | 50.7% [48.6, 52.8] (2,221 / 40) | 49.9% [45.2, 54.6] (449 / 7) | 50.7% [43.7, 57.8] (203 / 2) |
+| Both rested | 49.0% [47.9, 50.1] (7,641 / 146) | 50.3% [48.3, 52.3] (2,405 / 29) | 52.0% [49.1, 54.9] (1,174 / 19) |
+| Both b2b | 49.7% [45.7, 53.7] (634 / 9) | 53.9% [45.3, 62.3] (141 / 3) | 52.7% [42.0, 63.3] (91 / 0) |
+| Home b2b / away rested | 48.2% [44.8, 51.6] (865 / 14) | 45.4% [39.9, 50.9] (333 / 6) | 42.9% [35.8, 50.3] (191 / 1) |
+| All games | 49.3% [48.4, 50.3] (11,361 / 209) | 49.9% [48.2, 51.6] (3,328 / 45) | 50.9% [48.4, 53.3] (1,659 / 22) |
+
+- **No cover rate differs significantly from 50%.**
+- **Home b2b against a rested visitor is below 50% in all three splits:** 48.2%, 45.4% and 42.9%
+  (p = 0.31, 0.10, 0.06). That matches Ashman, Bowman & Lambrinos (2010), who report 45.86% for
+  1990-2009, and §9c-a's lean.
+- **Even pooled, it is not evidence of an edge.** The splits are small (191–865 decided games), each
+  CI includes 50%, and a bettor also pays the vig: at −110, about 52.4% is needed to break even on
+  the other side.
+
+### 9d. Exploratory: has the back-to-back effect changed over time?
+
+Labelled exploratory, not pre-registered, and not used to change any model. The model is §7f's
+(schedule variables + team-by-season dummies) on all split seasons, 2012-13 to 2025-26
+(n = 16,685), plus b2b × (season start year − 2018) interactions. It converged at full rank.
+
+| Term | Odds multiplier [95% CI] | p |
+|---|---|---|
+| Visitor on a b2b, at 2018-19 | 1.331 [1.216, 1.457] | < 0.001 |
+| Home on a b2b, at 2018-19 | 0.824 [0.735, 0.923] | 0.001 |
+| Visitor b2b × season | 1.016 per season [0.993, 1.039] | 0.17 |
+| Home b2b × season | 0.973 per season [0.948, 0.999] | 0.04 |
+
+- **The visitor-b2b effect is stable over time.**
+- **The home-b2b penalty may be growing, by about 2.7% in odds per season.** The raw gap in home-win
+  rate (home only on a b2b minus both rested, `b2b_gap_by_season.csv`) ranges from −10.7 to +2.1
+  points in 2012-13 to 2020-21 (mean −3.8), then −17.6, −5.4, −10.8, −9.4 and −11.9 points in
+  2021-22 to 2025-26, each season on 62–150 games.
+- **Weak evidence.** p = 0.04 on one of two interactions examined is weak, and the latest seasons are
+  also the test and validation periods. That is where the home-b2b lean against the market appears
+  (§9c), so the two observations are not independent.
+
+This is a hypothesis for later seasons, not a finding.
+
+### 9e. Reading the result
+
+- **The market prices back-to-backs, as far as these data can tell.**
+  - The visitor-b2b effect, real in raw rates and in the §7f replication, disappears once the market
+    probability is controlled for.
+  - Cover rates sit at 50% within noise in every situation.
+- **The one lean is the home team on a b2b against a rested visitor.** It is consistent across splits
+  and with the 2010 literature, but not significant. Combined with an exploratory, borderline trend,
+  it is something to watch, not claim.
+- **For the USP:** our features and the market agree that back-to-backs matter. The market already
+  knows, and it is a much stronger predictor than any public-data model here.
 
 ## Reproduce
 
@@ -674,4 +891,6 @@ done
 .venv/bin/python -m src.Pregame.schedule_experiments   # trains the 3 new models if not saved
 .venv/bin/python -m src.Pregame.schedule_replication
 .venv/bin/python -m src.Pregame.schedule_shap
+# Betting market (§9), window 20 only
+.venv/bin/python -m src.Pregame.market_analysis
 ```
