@@ -137,6 +137,25 @@ class TestGetOddsData(unittest.TestCase):
         self.assertEqual(teams_last_played["Team A"], date(2025, 1, 3))
         self.assertEqual(teams_last_played["Team B"], date(2025, 1, 3))
 
+    def test_games_without_a_final_score_are_skipped(self):
+        for home_score, away_score in [(0, 0), (None, None), (101, 101)]:
+            game = {**build_game(), "home_score": home_score, "away_score": away_score}
+            game_rows, teams_last_played = [], {}
+            get_odds_data.append_game_rows(game_rows, date(2025, 1, 3), game, "fanduel", teams_last_played)
+            self.assertEqual(game_rows, [])
+            self.assertEqual(teams_last_played, {})  # an unplayed game is not rest-day history
+
+    def test_daily_fetch_stops_at_yesterday(self):
+        config = {"get-odds-data": {"2025-26": {"start_date": "2025-10-01", "end_date": "2026-06-01",
+                                                "start_year": "2025", "end_year": "2026"}}}
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(get_odds_data, "load_config", return_value=config), \
+                mock.patch.object(get_odds_data, "collect_odds_for_dates", return_value=[]) as collect:
+            get_odds_data.main(today=date(2025, 10, 5), db_path=Path(tmpdir) / "odds.sqlite")
+        fetched = list(collect.call_args.args[0])
+        self.assertEqual(fetched[0], date(2025, 10, 1))
+        self.assertEqual(fetched[-1], date(2025, 10, 4))
+
     def test_collect_odds_for_dates(self):
         with mock.patch.object(get_odds_data, "fetch_scoreboard", return_value=DummyScoreboard([build_game()])), \
              mock.patch.object(get_odds_data.time, "sleep"):

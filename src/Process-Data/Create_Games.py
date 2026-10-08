@@ -80,6 +80,12 @@ def fetch_team_table(teams_con, date_str):
     return pd.read_sql_query(f'SELECT * FROM "{date_str}"', teams_con)
 
 
+def has_final_result(row):
+    """Odds rows scraped before a game finished (or for a postponed game) have a zero win margin;
+    NBA games cannot end level, so such a row has no valid label and is skipped."""
+    return pd.notna(row.Win_Margin) and row.Win_Margin != 0 and pd.notna(row.Points) and row.Points > 0
+
+
 def build_game_features(team_df, home_team, away_team, index_map):
     home_index = index_map.get(home_team)
     away_index = index_map.get(away_team)
@@ -136,6 +142,9 @@ def main():
             index_map = get_team_index_map(season_key)
 
             for row in odds_df.itertuples(index=False):
+                if not has_final_result(row):
+                    print(f"Skipping {row.Date} {row.Away} @ {row.Home}: no final result")
+                    continue
                 date_str = normalize_date(row.Date)
                 team_df = fetch_team_table(teams_con, date_str)
                 if team_df is None:

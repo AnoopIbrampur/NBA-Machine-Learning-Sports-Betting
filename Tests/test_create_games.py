@@ -1,6 +1,7 @@
 import importlib.util
 import sqlite3
 import tempfile
+import types
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,14 @@ SPEC.loader.exec_module(create_games)
 
 
 class TestCreateGames(unittest.TestCase):
+
+    def test_has_final_result(self):
+        row = lambda margin, points: types.SimpleNamespace(Win_Margin=margin, Points=points)  # noqa: E731
+        self.assertTrue(create_games.has_final_result(row(10, 245)))
+        self.assertTrue(create_games.has_final_result(row(-3, 207)))
+        self.assertFalse(create_games.has_final_result(row(0, 0)))  # scraped before tip-off
+        self.assertFalse(create_games.has_final_result(row(0, 53)))  # scraped mid-game
+        self.assertFalse(create_games.has_final_result(row(float("nan"), 210)))
 
     def test_normalize_date(self):
         self.assertEqual(create_games.normalize_date("2025-01-02"), "2025-01-02")

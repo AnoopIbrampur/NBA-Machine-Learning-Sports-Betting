@@ -124,7 +124,18 @@ def get_existing_games_by_date(con, season_key, start_date, end_date):
     return games_by_date
 
 
+def has_final_score(game):
+    """A game is stored only once it has a final score. Unplayed or postponed games come back with
+    0-0 and NBA games cannot end level, so equal scores mean the game is not final."""
+    home, away = game.get("home_score"), game.get("away_score")
+    return home is not None and away is not None and home != away
+
+
 def append_game_rows(game_rows, date_pointer, game, sportsbook, teams_last_played):
+    if not has_final_score(game):
+        print(f"Skipping game without a final score: {game.get('away_team')} @ {game.get('home_team')}")
+        return
+
     def days_rest(team):
         last_played = teams_last_played.get(team)
         if last_played is None:
@@ -233,7 +244,9 @@ def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=
             print("No current season found for today:", today)
             return
 
-        fetch_end = min(today, end_date)
+        # Through yesterday only, like backfill: today's games are not final yet, and storing them
+        # gave rows with partial or zero scores (and wrong Home-Team-Win labels downstream).
+        fetch_end = min(today - timedelta(days=1), end_date)
         existing_dates = get_existing_dates(con, season_key)
         latest_date = max(existing_dates) if existing_dates else None
         fetch_start = start_date if latest_date is None else latest_date + timedelta(days=1)

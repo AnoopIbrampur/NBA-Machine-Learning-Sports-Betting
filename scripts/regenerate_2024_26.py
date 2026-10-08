@@ -77,6 +77,8 @@ def season_rows(season, odds_con, teams_con):
     index_map = create_games.get_team_index_map(season)
     games, extra = [], []
     for row in odds_df.itertuples(index=False):
+        if not create_games.has_final_result(row):
+            continue
         team_df = create_games.fetch_team_table(teams_con, create_games.normalize_date(row.Date))
         if team_df is None:
             continue
