@@ -6,12 +6,12 @@ Original three models are the saved ones from `train_xgb.py` (unchanged); the th
 
 | Model | Split | n | Accuracy | Precision | Recall | F1 | AUC | Log loss | Brier |
 |---|---|---|---|---|---|---|---|---|---|
-| Baseline: repo season-to-date | test | 3386 | 0.6400 | 0.6570 | 0.7577 | 0.7038 | 0.6793 | 0.6350 | 0.2221 |
-| Pre-game w20 | test | 3386 | 0.6435 | 0.6513 | 0.7928 | 0.7151 | 0.6746 | 0.6372 | 0.2230 |
-| Pre-game w20 + margin (ablation) | test | 3386 | 0.6480 | 0.6565 | 0.7891 | 0.7167 | 0.6836 | 0.6326 | 0.2209 |
-| Pre-game w20 + fatigue | test | 3386 | 0.6409 | 0.6487 | 0.7933 | 0.7137 | 0.6751 | 0.6370 | 0.2229 |
-| Pre-game w20 + fatigue + travel | test | 3386 | 0.6412 | 0.6532 | 0.7766 | 0.7095 | 0.6759 | 0.6365 | 0.2226 |
-| Repo + fatigue + travel | test | 3386 | 0.6394 | 0.6575 | 0.7535 | 0.7023 | 0.6805 | 0.6340 | 0.2217 |
+| Baseline: repo season-to-date | test | 3386 | 0.6400 | 0.6565 | 0.7580 | 0.7036 | 0.6797 | 0.6349 | 0.2221 |
+| Pre-game w20 | test | 3386 | 0.6435 | 0.6509 | 0.7931 | 0.7150 | 0.6749 | 0.6371 | 0.2229 |
+| Pre-game w20 + margin (ablation) | test | 3386 | 0.6480 | 0.6561 | 0.7894 | 0.7166 | 0.6838 | 0.6326 | 0.2209 |
+| Pre-game w20 + fatigue | test | 3386 | 0.6409 | 0.6483 | 0.7936 | 0.7136 | 0.6754 | 0.6370 | 0.2229 |
+| Pre-game w20 + fatigue + travel | test | 3386 | 0.6412 | 0.6527 | 0.7768 | 0.7094 | 0.6763 | 0.6364 | 0.2226 |
+| Repo + fatigue + travel | test | 3386 | 0.6394 | 0.6571 | 0.7538 | 0.7021 | 0.6809 | 0.6339 | 0.2216 |
 | Baseline: repo season-to-date | validation | 1681 | 0.6556 | 0.6576 | 0.7675 | 0.7083 | 0.7089 | 0.6221 | 0.2165 |
 | Pre-game w20 | validation | 1681 | 0.6419 | 0.6454 | 0.7609 | 0.6984 | 0.6987 | 0.6275 | 0.2189 |
 | Pre-game w20 + margin (ablation) | validation | 1681 | 0.6466 | 0.6507 | 0.7587 | 0.7006 | 0.7107 | 0.6207 | 0.2157 |
@@ -23,12 +23,12 @@ Original three models are the saved ones from `train_xgb.py` (unchanged); the th
 
 | Model | Reference | Split | Accuracy diff CI | AUC diff CI |
 |---|---|---|---|---|
-| Pre-game w20 | Baseline: repo season-to-date | test | [-0.0098, +0.0165] | [-0.0151, +0.0057] |
-| Pre-game w20 + margin (ablation) | Baseline: repo season-to-date | test | [-0.0047, +0.0210] | [-0.0054, +0.0138] |
-| Pre-game w20 + fatigue | Baseline: repo season-to-date | test | [-0.0124, +0.0145] | [-0.0146, +0.0062] |
-| Pre-game w20 + fatigue + travel | Baseline: repo season-to-date | test | [-0.0121, +0.0142] | [-0.0141, +0.0073] |
-| Repo + fatigue + travel | Baseline: repo season-to-date | test | [-0.0056, +0.0041] | [-0.0003, +0.0028] |
-| Pre-game w20 + fatigue | Pre-game w20 | test | [-0.0077, +0.0021] | [-0.0010, +0.0021] |
+| Pre-game w20 | Baseline: repo season-to-date | test | [-0.0098, +0.0165] | [-0.0152, +0.0057] |
+| Pre-game w20 + margin (ablation) | Baseline: repo season-to-date | test | [-0.0047, +0.0210] | [-0.0055, +0.0136] |
+| Pre-game w20 + fatigue | Baseline: repo season-to-date | test | [-0.0124, +0.0145] | [-0.0147, +0.0061] |
+| Pre-game w20 + fatigue + travel | Baseline: repo season-to-date | test | [-0.0121, +0.0142] | [-0.0141, +0.0072] |
+| Repo + fatigue + travel | Baseline: repo season-to-date | test | [-0.0056, +0.0041] | [-0.0003, +0.0027] |
+| Pre-game w20 + fatigue | Pre-game w20 | test | [-0.0077, +0.0021] | [-0.0011, +0.0021] |
 | Pre-game w20 + fatigue + travel | Pre-game w20 | test | [-0.0086, +0.0036] | [-0.0004, +0.0032] |
 | Pre-game w20 + fatigue + travel | Pre-game w20 + fatigue | test | [-0.0053, +0.0059] | [-0.0008, +0.0024] |
 | Pre-game w20 | Baseline: repo season-to-date | validation | [-0.0327, +0.0030] | [-0.0232, +0.0021] |
@@ -46,24 +46,24 @@ Slices were fixed before results were seen and are all reported. b2b = the exist
 
 | Split | Slice | Model | n | Home-win rate | Accuracy | AUC | Log loss | Brier | Acc diff vs repo CI | AUC diff vs repo CI | Note |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| test | 1. neither team on a b2b | Baseline: repo season-to-date | 2445 | 0.5665 | 0.6348 | 0.6708 | 0.6385 | 0.2238 | - | - |  |
-| test | 1. neither team on a b2b | Pre-game w20 | 2445 | 0.5665 | 0.6401 | 0.6660 | 0.6405 | 0.2245 | [-0.0106, +0.0213] | [-0.0171, +0.0078] |  |
-| test | 1. neither team on a b2b | Pre-game w20 + margin (ablation) | 2445 | 0.5665 | 0.6450 | 0.6756 | 0.6361 | 0.2225 | [-0.0045, +0.0245] | [-0.0071, +0.0166] |  |
-| test | 1. neither team on a b2b | Pre-game w20 + fatigue | 2445 | 0.5665 | 0.6401 | 0.6664 | 0.6405 | 0.2245 | [-0.0106, +0.0204] | [-0.0168, +0.0083] |  |
-| test | 1. neither team on a b2b | Pre-game w20 + fatigue + travel | 2445 | 0.5665 | 0.6389 | 0.6671 | 0.6403 | 0.2244 | [-0.0119, +0.0200] | [-0.0160, +0.0091] |  |
-| test | 1. neither team on a b2b | Repo + fatigue + travel | 2445 | 0.5665 | 0.6307 | 0.6706 | 0.6385 | 0.2238 | [-0.0098, +0.0016] | [-0.0020, +0.0015] |  |
+| test | 1. neither team on a b2b | Baseline: repo season-to-date | 2445 | 0.5661 | 0.6344 | 0.6707 | 0.6387 | 0.2239 | - | - |  |
+| test | 1. neither team on a b2b | Pre-game w20 | 2445 | 0.5661 | 0.6397 | 0.6658 | 0.6408 | 0.2246 | [-0.0106, +0.0213] | [-0.0173, +0.0076] |  |
+| test | 1. neither team on a b2b | Pre-game w20 + margin (ablation) | 2445 | 0.5661 | 0.6446 | 0.6752 | 0.6364 | 0.2226 | [-0.0045, +0.0245] | [-0.0073, +0.0163] |  |
+| test | 1. neither team on a b2b | Pre-game w20 + fatigue | 2445 | 0.5661 | 0.6397 | 0.6661 | 0.6407 | 0.2246 | [-0.0106, +0.0204] | [-0.0171, +0.0081] |  |
+| test | 1. neither team on a b2b | Pre-game w20 + fatigue + travel | 2445 | 0.5661 | 0.6384 | 0.6669 | 0.6405 | 0.2245 | [-0.0119, +0.0200] | [-0.0162, +0.0089] |  |
+| test | 1. neither team on a b2b | Repo + fatigue + travel | 2445 | 0.5661 | 0.6303 | 0.6704 | 0.6386 | 0.2239 | [-0.0098, +0.0016] | [-0.0020, +0.0015] |  |
 | test | 2. away team only on a b2b | Baseline: repo season-to-date | 458 | 0.6201 | 0.6616 | 0.6818 | 0.6202 | 0.2150 | - | - |  |
 | test | 2. away team only on a b2b | Pre-game w20 | 458 | 0.6201 | 0.6659 | 0.6777 | 0.6202 | 0.2149 | [-0.0349, +0.0437] | [-0.0335, +0.0256] |  |
 | test | 2. away team only on a b2b | Pre-game w20 + margin (ablation) | 458 | 0.6201 | 0.6507 | 0.6743 | 0.6218 | 0.2159 | [-0.0480, +0.0284] | [-0.0356, +0.0201] |  |
 | test | 2. away team only on a b2b | Pre-game w20 + fatigue | 458 | 0.6201 | 0.6550 | 0.6788 | 0.6189 | 0.2144 | [-0.0459, +0.0306] | [-0.0338, +0.0273] |  |
 | test | 2. away team only on a b2b | Pre-game w20 + fatigue + travel | 458 | 0.6201 | 0.6550 | 0.6790 | 0.6188 | 0.2143 | [-0.0459, +0.0328] | [-0.0330, +0.0283] |  |
 | test | 2. away team only on a b2b | Repo + fatigue + travel | 458 | 0.6201 | 0.6725 | 0.6845 | 0.6177 | 0.2138 | [-0.0044, +0.0262] | [-0.0020, +0.0072] |  |
-| test | 3. home team only on a b2b | Baseline: repo season-to-date | 339 | 0.4690 | 0.6342 | 0.7161 | 0.6412 | 0.2246 | - | - |  |
-| test | 3. home team only on a b2b | Pre-game w20 | 339 | 0.4690 | 0.6342 | 0.6943 | 0.6543 | 0.2308 | [-0.0413, +0.0442] | [-0.0508, +0.0078] |  |
-| test | 3. home team only on a b2b | Pre-game w20 + margin (ablation) | 339 | 0.4690 | 0.6490 | 0.7150 | 0.6409 | 0.2246 | [-0.0236, +0.0531] | [-0.0274, +0.0248] |  |
-| test | 3. home team only on a b2b | Pre-game w20 + fatigue | 339 | 0.4690 | 0.6224 | 0.6898 | 0.6555 | 0.2315 | [-0.0501, +0.0295] | [-0.0554, +0.0041] |  |
-| test | 3. home team only on a b2b | Pre-game w20 + fatigue + travel | 339 | 0.4690 | 0.6283 | 0.6931 | 0.6522 | 0.2298 | [-0.0442, +0.0383] | [-0.0514, +0.0065] |  |
-| test | 3. home team only on a b2b | Repo + fatigue + travel | 339 | 0.4690 | 0.6460 | 0.7214 | 0.6354 | 0.2220 | [-0.0029, +0.0265] | [+0.0004, +0.0104] **excl. 0** |  |
+| test | 3. home team only on a b2b | Baseline: repo season-to-date | 339 | 0.4661 | 0.6372 | 0.7214 | 0.6393 | 0.2237 | - | - |  |
+| test | 3. home team only on a b2b | Pre-game w20 | 339 | 0.4661 | 0.6372 | 0.6998 | 0.6521 | 0.2297 | [-0.0413, +0.0442] | [-0.0505, +0.0078] |  |
+| test | 3. home team only on a b2b | Pre-game w20 + margin (ablation) | 339 | 0.4661 | 0.6519 | 0.7205 | 0.6384 | 0.2234 | [-0.0236, +0.0531] | [-0.0273, +0.0252] |  |
+| test | 3. home team only on a b2b | Pre-game w20 + fatigue | 339 | 0.4661 | 0.6254 | 0.6950 | 0.6536 | 0.2306 | [-0.0501, +0.0295] | [-0.0556, +0.0041] |  |
+| test | 3. home team only on a b2b | Pre-game w20 + fatigue + travel | 339 | 0.4661 | 0.6313 | 0.6983 | 0.6500 | 0.2288 | [-0.0442, +0.0383] | [-0.0516, +0.0064] |  |
+| test | 3. home team only on a b2b | Repo + fatigue + travel | 339 | 0.4661 | 0.6490 | 0.7266 | 0.6333 | 0.2210 | [-0.0029, +0.0265] | [+0.0004, +0.0103] **excl. 0** |  |
 | test | 4. both on a b2b | Baseline: repo season-to-date | 144 | 0.5764 | 0.6736 | 0.7174 | 0.6084 | 0.2107 | - | - | unreliable (n < 200) |
 | test | 4. both on a b2b | Pre-game w20 | 144 | 0.5764 | 0.6528 | 0.7422 | 0.5940 | 0.2041 | [-0.0833, +0.0417] | [-0.0196, +0.0708] | unreliable (n < 200) |
 | test | 4. both on a b2b | Pre-game w20 + margin (ablation) | 144 | 0.5764 | 0.6875 | 0.7521 | 0.5883 | 0.2013 | [-0.0347, +0.0625] | [-0.0085, +0.0815] | unreliable (n < 200) |

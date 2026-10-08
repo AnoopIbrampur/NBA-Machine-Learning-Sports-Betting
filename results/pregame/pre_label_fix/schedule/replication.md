@@ -22,13 +22,13 @@ Odds multipliers for a home win, 95% Wald CIs (> 1 favours the home team). Refer
 |                                          |     n |   home_win_rate |
 |:-----------------------------------------|------:|----------------:|
 | ('all', 'home rested / away b2b')        |  2955 |          0.6193 |
-| ('all', 'both rested')                   | 11669 |          0.5681 |
+| ('all', 'both rested')                   | 11669 |          0.568  |
 | ('all', 'both b2b')                      |   887 |          0.584  |
-| ('all', 'home b2b / away rested')        |  1429 |          0.4997 |
+| ('all', 'home b2b / away rested')        |  1429 |          0.499  |
 | ('test', 'home rested / away b2b')       |   458 |          0.6201 |
-| ('test', 'both rested')                  |  2445 |          0.5665 |
+| ('test', 'both rested')                  |  2445 |          0.5661 |
 | ('test', 'both b2b')                     |   144 |          0.5764 |
-| ('test', 'home b2b / away rested')       |   339 |          0.469  |
+| ('test', 'home b2b / away rested')       |   339 |          0.4661 |
 | ('train', 'home rested / away b2b')      |  2292 |          0.6222 |
 | ('train', 'both rested')                 |  8031 |          0.5704 |
 | ('train', 'both b2b')                    |   652 |          0.5966 |
