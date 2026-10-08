@@ -24,6 +24,17 @@ and 0.6466 / 0.7107 on validation, also within noise.
 SHAP shows recent win-record features outranking all 11 box-score stats. This is the same pattern
 parent paper 2 reports: engineered context features rank above box-score stats.
 
+**Back-to-backs and travel (§7): a clean null for prediction.** We rebuilt "back-to-back" from two
+flags into a full fatigue and travel feature group, following parent paper 3 (Bowman et al., 2023).
+- **No gain.** Accuracy, AUC and log loss do not improve beyond noise on test or validation,
+  overall or on any of six slices fixed in advance.
+- **Test results:** pre-game + fatigue + travel scores 0.6412 accuracy / 0.6763 AUC, against
+  0.6435 / 0.6749 for the official pre-game model.
+- **The effect itself is real.** The home team wins 61.9% when only the visitor is on a b2b and
+  49.9% when only the home team is.
+- **Partial replication of Bowman.** On our training seasons the visitor-b2b odds ratio is
+  1.31 [1.18, 1.46], against Bowman's 1.51. The models already capture this through rest days.
+
 ## 1. What the repo's baseline actually is
 
 - **Source:** `src/Process-Data/Get_Data.py` downloads stats.nba.com `leaguedashteamstats` with
@@ -310,9 +321,334 @@ specific context features differ.
   of `dataset_2012-26`. That was measured before the fix, inside the leaky 2024-26 seasons. It is
   inflated and should not be cited as a baseline.
 
-## 7. Open decisions
+## 7. Schedule fatigue and travel (parent paper 3)
 
-No open items.
+**Why.** Our stated USP is back-to-back games. Before this work it was two binary flags
+(`b2b_home`, `b2b_away`) that ranked 14th and 19th of 19 in the window-20 SHAP ranking and carried
+1.4% of total |SHAP|. This section turns it into a schedule-fatigue and travel feature group built
+from parent paper 3 and a supporting paper, then measures whether it helps.
+
+- **Parent paper 3:** Bowman, Harmon & Ashman, "Schedule inequity in the National Basketball
+  Association", *Journal of Sports Analytics* 9(1), 2023.
+- **Supporting paper:** Leota et al., *Frontiers in Physiology* 13:892681, 2022. It supplies the
+  net jet-lag definition.
+
+**Short answer: a clean null for prediction, and a partial replication of the paper.**
+- **Prediction:** no new feature set beats the repo baseline or the pre-game model on test. Only 1
+  of the 24 headline 95% CIs excludes zero, and it does not hold up on the other split or the other
+  metric (§7d).
+- **Replication:** the back-to-back effect itself is clearly in our data and largely replicates
+  Bowman's odds ratios for the visitor (§7f). The models already capture it through rest days.
+
+All files are in `results/pregame/schedule/`.
+
+### 7a. Venues, and games without a real home court
+
+- **Arena table, `Data/arenas.csv`.** Each team's home arena with latitude, longitude, IANA time zone
+  and validity dates. Arena moves are covered: GSW (2019), LAC (2024), SAC (2016), MIL (2018),
+  DET (2017).
+- **Toronto 2020-21.** Home games in Tampa (Amalie Arena, `America/New_York`) from 2020-12-01 to
+  2021-07-31.
+- **Time zone offsets.** Computed with `zoneinfo` at 19:00 local on the actual game date. Both
+  venues' offsets are read on the same date, so a daylight-saving switch between two games in one
+  city is not a shift, and Phoenix (no DST) is +1 h from Los Angeles in January and 0 h in July.
+- **2019-20 restart, from 2020-07-30.** The logs show these games as ordinary pairs ("BOS vs. POR").
+  There are 172 of them: 88 seeding, 1 play-in and 83 playoff games, all in the training split.
+  - All were played at one site (Lake Buena Vista), so travel between restart games is 0 km and
+    0 h. The trip into the first restart game, after a 4½-month stoppage, is left missing.
+  - No team counts as "at home" in the bubble, so restart games extend `consec_away`.
+  - The models keep these games, because the existing feature sets already include them. The
+    replication excludes them (no home court).
+- **Neutral-site games flagged by `features.py`.** There are 10, all from 2024-25 onward: NBA Cup
+  Las Vegas, Mexico City, Paris, Berlin and London. Travel is missing for the game and for each
+  team's next game. None of these are in the split.
+- **Surprise: off-site games the logs list as home games.** 24 earlier off-site games appear in
+  MATCHUP as ordinary home games ("vs."), so the existing neutral flag misses them.
+  - They are 22 international games from 2013–2024 and the 2023 In-Season Tournament semifinals in
+    Las Vegas.
+  - The list is `Data/offsite_games.csv`, taken from Wikipedia's NBA Global Games page. Every entry
+    is checked against the logs (date plus both teams must match exactly one game), and the code
+    raises an error otherwise.
+  - Cities are not recorded, because the source extraction was unreliable on city. All 24 are
+    treated like neutral sites: travel missing for the game and the next game.
+  - 18 are in train and 6 in test. In the existing features these games still count as home games;
+    that is left unchanged.
+- **Missing travel.** 95 of 16,940 split games (63 train, 20 test, 12 validation) have travel
+  missing for at least one team. The causes are season openers, the game after an off-site game,
+  and the first restart game.
+- **stats.nba.com status.** When this was built (2026-10-08), stats.nba.com returned an HTML page
+  in place of JSON on every endpoint. Nothing needed re-downloading: the cached game logs and saved
+  models reproduce `metrics_w20.md` exactly.
+
+### 7b. Features (`src/Pregame/schedule_features.py`)
+
+Computed per team per game, within season, from the dates and venues of that team's earlier games
+plus the date of its next regular-season game. No result or box score is read. The features do not
+depend on the rolling window. The existing `rest_days` / `b2b` columns are unchanged.
+
+| Group | Feature (per team, home and away) | Definition |
+|---|---|---|
+| Fatigue | `rest_bucket` | days since last game, capped at 3 (1, 2, 3+) |
+| Fatigue | `games_last7` | the team's games in the 7 days before game day |
+| Fatigue | `three_in_four` | 2+ games in the 3 days before, i.e. this is the 3rd game in 4 days |
+| Fatigue | `consec_away` | consecutive games away from its home arena immediately before this one |
+| Fatigue | `b2b_prev_away` | on a back-to-back: 1 if last night's game was away, 0 if at home |
+| Fatigue | `first_leg_b2b` | the next scheduled regular-season game is tomorrow (date only; 0 in the postseason, which has no back-to-backs in our data) |
+| Fatigue (game) | `rest_diff` | home − away `rest_bucket` |
+| Travel | `travel_km` | great-circle km from the previous game's venue |
+| Travel | `tz_shift` | signed clock change in hours, east positive |
+| Travel | `jet_lag` | sign × max(\|shift\| − days since previous game, 0) |
+| Travel (game) | `visitor_long_trip` | Bowman: visitor > 1,609 km on a back-to-back or > 3,219 km otherwise |
+| Travel (game) | `home_east_b2b` | Bowman: home team crossed 1+ time zone eastward from a game one day ago |
+
+**Leakage tests (`Tests/test_schedule_features.py`).** Each test checks that a game's features are
+unchanged when one thing is altered:
+- the game's own result and box score;
+- later games' results;
+- the dates and venues of every game after the next one.
+
+Each test was confirmed to fail when the matching leak was injected deliberately (current result,
+a later result, a later venue). The injected leaks were then removed. Hand-computed cases cover:
+- Los Angeles → Boston = +3 h, giving 2 h eastward jet lag 1 day later (Leota's example);
+- Phoenix in January vs July;
+- Toronto/Tampa 2020-21;
+- a distance sanity check: Los Angeles → Boston ≈ 4,180 km.
+
+**Jet lag is almost always 0.** Under this definition one zone of travel with one day of rest nets
+to 0. Only 415 team-games in the split have non-zero net jet lag. That makes slice 5 tiny and leaves
+the models with nothing to split on (§7e).
+
+### 7c. Results: window 20, full test and validation sets
+
+Same split, same 40-trial walk-forward search on train only, same seed. The three original models
+are the saved ones, untouched. Source: `results/pregame/schedule/metrics_w20.md`.
+
+| Model | Split | n | Acc | Prec | Recall | F1 | AUC | Log loss | Brier |
+|---|---|---|---|---|---|---|---|---|---|
+| Baseline: repo season-to-date | test | 3,386 | 0.6400 | 0.6565 | 0.7580 | 0.7036 | 0.6797 | 0.6349 | 0.2221 |
+| Pre-game w20 (official) | test | 3,386 | 0.6435 | 0.6509 | 0.7931 | 0.7150 | 0.6749 | 0.6371 | 0.2229 |
+| Pre-game w20 + margin (ablation) | test | 3,386 | 0.6480 | 0.6561 | 0.7894 | 0.7166 | 0.6838 | 0.6326 | 0.2209 |
+| Pre-game w20 + fatigue | test | 3,386 | 0.6409 | 0.6483 | 0.7936 | 0.7136 | 0.6754 | 0.6370 | 0.2229 |
+| Pre-game w20 + fatigue + travel | test | 3,386 | 0.6412 | 0.6527 | 0.7768 | 0.7094 | 0.6763 | 0.6364 | 0.2226 |
+| Repo + fatigue + travel | test | 3,386 | 0.6394 | 0.6571 | 0.7538 | 0.7021 | 0.6809 | 0.6339 | 0.2216 |
+| Baseline: repo season-to-date | validation | 1,681 | 0.6556 | 0.6576 | 0.7675 | 0.7083 | 0.7089 | 0.6221 | 0.2165 |
+| Pre-game w20 (official) | validation | 1,681 | 0.6419 | 0.6454 | 0.7609 | 0.6984 | 0.6987 | 0.6275 | 0.2189 |
+| Pre-game w20 + margin (ablation) | validation | 1,681 | 0.6466 | 0.6507 | 0.7587 | 0.7006 | 0.7107 | 0.6207 | 0.2157 |
+| Pre-game w20 + fatigue | validation | 1,681 | 0.6472 | 0.6483 | 0.7707 | 0.7042 | 0.6985 | 0.6283 | 0.2192 |
+| Pre-game w20 + fatigue + travel | validation | 1,681 | 0.6496 | 0.6538 | 0.7587 | 0.7024 | 0.6998 | 0.6268 | 0.2185 |
+| Repo + fatigue + travel | validation | 1,681 | 0.6526 | 0.6566 | 0.7598 | 0.7045 | 0.7095 | 0.6213 | 0.2161 |
+
+Training CV log loss (walk-forward, train only):
+
+| Model | Training CV log loss |
+|---|---|
+| repo | 0.6240 |
+| repo + fatigue + travel | 0.6238 |
+| pregame | 0.6308 |
+| pregame + fatigue | 0.6304 |
+| pregame + fatigue + travel | 0.6305 |
+
+The new features barely move training CV either.
+
+### 7d. Paired bootstrap 95% CIs (model − reference, 2,000 resamples)
+
+| Model | Reference | Test acc | Test AUC | Validation acc | Validation AUC |
+|---|---|---|---|---|---|
+| Pre-game + fatigue | repo | [−0.012, +0.015] | [−0.015, +0.006] | [−0.027, +0.008] | [−0.023, +0.002] |
+| Pre-game + fatigue + travel | repo | [−0.012, +0.014] | [−0.014, +0.007] | [−0.025, +0.011] | [−0.022, +0.003] |
+| Repo + fatigue + travel | repo | [−0.006, +0.004] | [−0.0003, +0.003] | [−0.010, +0.004] | [−0.001, +0.003] |
+| Pre-game + fatigue | pregame | [−0.008, +0.002] | [−0.001, +0.002] | [−0.002, +0.013] | [−0.002, +0.002] |
+| Pre-game + fatigue + travel | pregame | [−0.009, +0.004] | [−0.0004, +0.003] | **[+0.0006, +0.015]** | [−0.001, +0.003] |
+| Pre-game + fatigue + travel | pregame + fatigue | [−0.005, +0.006] | [−0.001, +0.002] | [−0.005, +0.010] | [−0.001, +0.003] |
+
+**One interval excludes zero:** pre-game + fatigue + travel vs pre-game, validation accuracy,
++0.008 (0.6496 vs 0.6419). It should not be read as a gain:
+- On the same model, the validation AUC interval includes zero.
+- On test, the accuracy point estimate goes the other way (0.6412 vs 0.6435).
+- It is 1 of 24 intervals in this table, roughly what chance alone produces at 95%.
+
+Every comparison against the repo baseline includes zero on both splits.
+
+### 7e. Pre-registered slices
+
+These six slices were fixed before any result was seen, and all are reported in
+`results/pregame/schedule/metrics_w20.md` for every model, with n, accuracy, AUC, log loss and
+Brier. b2b uses the existing flags; a season's first game counts as not on a b2b. Slices 5 and 6
+exclude games with unknown travel.
+
+| Slice | Test n | Test home-win | Val n | Val home-win | Note |
+|---|---|---|---|---|---|
+| 1. neither team on a b2b | 2,445 | 0.566 | 1,193 | 0.556 | |
+| 2. away team only on a b2b | 458 | 0.620 | 205 | 0.585 | |
+| 3. home team only on a b2b | 339 | 0.466 | 192 | 0.453 | validation unreliable (n < 200) |
+| 4. both on a b2b | 144 | 0.576 | 91 | 0.505 | unreliable (n < 200) |
+| 5. home eastward net jet lag ≥ 1 h | 13 | 0.385 | 8 | 0.625 | no CI (n < 30); not interpretable |
+| 6. away travelled > 1,609 km | 727 | 0.550 | 378 | 0.542 | |
+
+Accuracy / AUC on each slice for the baseline, the official pre-game model, and the two full
+schedule models:
+
+| Slice | Split | Repo | Pre-game | Pre-game + fat. + travel | Repo + fat. + travel |
+|---|---|---|---|---|---|
+| 1 | test | 0.634 / 0.671 | 0.640 / 0.666 | 0.638 / 0.667 | 0.630 / 0.670 |
+| 1 | val | 0.664 / 0.714 | 0.651 / 0.709 | 0.660 / 0.709 | 0.661 / 0.714 |
+| 2 | test | 0.662 / 0.682 | 0.666 / 0.678 | 0.655 / 0.679 | 0.672 / 0.685 |
+| 2 | val | 0.659 / 0.716 | 0.673 / 0.685 | 0.688 / 0.693 | 0.654 / 0.719 |
+| 3 | test | 0.637 / 0.721 | 0.637 / 0.700 | 0.631 / 0.698 | 0.649 / 0.727 |
+| 3 | val | 0.630 / 0.714 | 0.604 / 0.699 | 0.599 / 0.697 | 0.630 / 0.715 |
+| 4 | test | 0.674 / 0.717 | 0.653 / 0.742 | 0.667 / 0.748 | 0.667 / 0.721 |
+| 4 | val | 0.593 / 0.650 | 0.527 / 0.621 | 0.538 / 0.626 | 0.593 / 0.653 |
+| 6 | test | 0.618 / 0.677 | 0.641 / 0.663 | 0.634 / 0.665 | 0.616 / 0.676 |
+| 6 | val | 0.646 / 0.698 | 0.651 / 0.708 | 0.651 / 0.710 | 0.651 / 0.703 |
+
+**What the slices show**
+- **The schedule features do not help on back-to-back games specifically.** On slices 2–4 the
+  schedule models are within noise of the models without them, in both directions.
+- **Slice 3 (home team only on a b2b) is the hardest situation for the pre-game models.** The home
+  team wins under half the time (0.466 test, 0.453 validation). The official pre-game model and
+  both pre-game schedule models trail the baseline on AUC there in both splits, by 0.016–0.026.
+  Adding schedule features does not close the gap.
+- **Intervals that exclude zero, against the repo baseline.** 4 of 100 slice intervals (5 models ×
+  5 slices with a CI × 2 splits × 2 metrics), close to the 5 expected by chance. None repeats
+  across splits:
+  - repo + fatigue + travel, slice 3 test AUC: [+0.0004, +0.010]; validation [−0.007, +0.008];
+  - pre-game and pre-game + fatigue, slice 4 validation accuracy (worse, n = 91);
+  - pre-game + margin (ablation), slice 6 validation AUC: [+0.002, +0.050]; test
+    [−0.029, +0.013].
+- **Slice 5 is not interpretable** (13 and 8 games).
+
+No other slices were examined.
+
+### 7f. Replicating Bowman et al. on our training seasons
+
+Logistic regression of home win on Bowman's schedule variables. Source:
+`results/pregame/schedule/replication.md`.
+
+- **Games:** training split (2012-11 → 2022-01), excluding the 172 restart games, 18 off-site games
+  and 33 games with missing rest or travel, which leaves n = 11,650.
+- **Primary control:** team-by-season dummies for home and visitor, as in the paper. The fit is
+  stable: converged, full rank (598 columns), largest SE 1.08. One home dummy per season and one
+  visitor dummy are dropped for identifiability.
+- **Second control (check):** both teams' season-to-date win % from the repo dataset.
+- **Reference rest:** 2 days.
+
+| Variable | Games | Bowman | Ours, team-season dummies (95% CI) | Ours, win % control (95% CI) |
+|---|---|---|---|---|
+| Visitor on a back-to-back | 2,930 | 1.506 | **1.311 [1.180, 1.457]** | **1.289 [1.172, 1.419]** |
+| Home on a back-to-back | 1,535 | 0.806 | 0.897 [0.780, 1.031] | 0.885 [0.780, 1.004] |
+| Home crossed 1+ zone eastward from a game one day ago | 185 | 0.693 | 0.864 [0.605, 1.234] | 0.905 [0.655, 1.251] |
+| Visitor > 1,000 mi on a b2b or > 2,000 mi otherwise | 396 | 1.261 | **1.319 [1.035, 1.683]** | 1.155 [0.930, 1.433] |
+| Visitor played 3+ games in the last week | 9,730 | 1.153 | 0.995 [0.880, 1.124] | 0.994 [0.888, 1.111] |
+| Home played 4+ games in the last week | 3,540 | 0.914 | 1.041 [0.940, 1.152] | 1.000 [0.912, 1.095] |
+| Visitor rested 3+ days (vs 2) | 2,141 | not different | 0.916 [0.811, 1.034] | 0.962 [0.861, 1.074] |
+| Home rested 3+ days (vs 2) | 2,652 | not different | 1.070 [0.957, 1.196] | 1.066 [0.963, 1.180] |
+
+**Replicates**
+- **Visitor back-to-back** favours the home team. The direction matches Bowman and the effect is
+  significant under both controls, but smaller (1.31 vs 1.51).
+- **Rest of 3+ days** is not different from 2 days, as in Bowman.
+
+**Same direction, not significant**
+- **Home back-to-back:** 0.90 vs 0.81.
+- **Home team crossing 1+ zone eastward on a b2b:** 0.86 vs 0.69, with only 185 games.
+
+**Partly replicates**
+- **Visitor long trip:** 1.32 vs 1.26, significant with team-season dummies but not with the
+  win % control.
+
+**Does not replicate**
+- **Games-in-the-last-week variables.** Our definition counts the team's games in the 7 days
+  before game day. With it, "visitor played 3+" is true in 9,730 of 11,650 games, almost a
+  constant. Bowman's exact window may differ, so this is a definitional mismatch as much as a
+  finding.
+
+**Raw home-win rate by back-to-back situation, all split games.** From the dataset's Days-Rest
+columns (n = 16,963), which reproduces the numbers we started from:
+
+| Situation | n | Home-win rate |
+|---|---|---|
+| home rested / away b2b | 2,956 | 0.619 |
+| both rested | 11,691 | 0.568 |
+| both b2b | 890 | 0.583 |
+| home b2b / away rested | 1,426 | 0.499 |
+
+The same table by split, using the game-log b2b flags (16,940 games), is in
+`home_win_by_b2b_situation.csv`. The pattern holds in every split; validation's "both b2b" (n = 91)
+is the noisiest cell.
+
+**Back-to-back frequency by season** (`b2b_frequency_by_season.csv`):
+- Back-to-backs per team fell from about 18.5 in 2012-13 to 13–15 since 2017-18.
+- The away team was on a b2b in 31% of games in 2012-13 and 17–18% since 2022-23.
+- 2020-21 (compressed COVID schedule) is the exception: 19% of home teams were on a b2b.
+
+The fall means fewer of the situations where schedule features matter in the test and validation
+years than in training.
+
+### 7g. SHAP (test split)
+
+`pregame_sched` is the better new pre-game model by training CV log loss (0.6304 vs 0.6305). The
+two are essentially tied, so `pregame_sched_travel` is also explained, as a supplement.
+
+Share of total mean |SHAP| by group:
+
+| Group | pregame w20 (§5) | pregame + fatigue | pregame + fatigue + travel | repo + fatigue + travel |
+|---|---|---|---|---|
+| Win record | 58% | 58.8% | 55.1% | 33.0% |
+| Box-score stats | 38% | 33.5% | 34.5% | 60.8% (incl. plus-minus) |
+| Fatigue (incl. existing rest/b2b) | 4.6% | 7.7% | 8.6% | 4.5% |
+| Travel | — | — | 1.8% | 0.4% |
+| Games played / minutes | — | — | — | 1.3% |
+
+- **Fatigue's share rises (4.6% → 7.7%) but accuracy does not.** The new columns mostly share
+  credit with the old rest-day columns rather than adding information.
+- **Top schedule features in pregame_sched:** `rest_diff` (#13), `rest_days_away` (#14),
+  `b2b_prev_away_away` (#16), `games_last7_away` (#17). Home-side fatigue features are near the
+  bottom.
+- **Away back-to-back.** Mean SHAP is +0.011 log-odds toward the home team when the visitor is on a
+  b2b, and −0.004 otherwise. The repo + fatigue + travel model shows the same through
+  `rest_bucket_away` (+0.021 at 1 day vs −0.007 at 2 or 3+). The direction matches Bowman; the size
+  is small.
+- **Home net jet lag has exactly zero SHAP in every model.** No tree ever splits on it, so its
+  dependence plots are flat. Of the travel features, only `travel_km_away` carries any weight
+  (#16 in pregame + fatigue + travel).
+
+### 7h. Reading the result
+
+- **The back-to-back effect is real.** It is clear in raw rates, and the visitor-b2b odds ratio
+  replicates Bowman's direction and significance.
+- **It adds nothing to prediction.** Both baselines already contain rest days, and the win-record
+  and team-strength features carry what remains.
+- **Richer fatigue and travel features do not move accuracy, AUC or log loss** beyond noise on
+  either held-out period, overall or on back-to-back games.
+- **What the USP can honestly claim:** a careful, leakage-tested measurement of schedule effects
+  that replicates parent paper 3's main finding on 2012-22 data. It cannot claim that schedule
+  features improve prediction.
+
+**Limitations**
+- **Definition choices that could matter:**
+  - the 7-day window for "games in the last week";
+  - the jet-lag formula as specified (with Leota's "one rest day" read as one day since the previous
+    game);
+  - games after postponements use the date actually played, not the originally published date.
+- **Off-site list:** taken from Wikipedia's NBA Global Games page and verified against the logs, so
+  it could still miss a game the page omits.
+
+## 8. Open decisions
+
+- **Should the official feature set change to include the schedule features (§7)?**
+  **Recommendation: no.** Keep the official set as pre-game window 20 (11 stats + win-record + rest
+  days + b2b flags). Report `pregame_sched` and `pregame_sched_travel` as a labelled extension, the
+  way margin is reported. The evidence:
+  - no new feature set differs from the repo baseline on either split;
+  - against the pre-game model, the only interval excluding zero (validation accuracy, +0.008)
+    disappears on AUC and reverses on test;
+  - training CV log loss moves only in the 4th decimal (0.6308 → 0.6304 / 0.6305).
+
+  Two things argue for keeping the schedule work in the report, but not in the official set:
+  - the visitor back-to-back effect replicates Bowman (odds ratio 1.31 [1.18, 1.46]);
+  - the pre-registered slices are the honest test of the back-to-back USP, and they show no gain.
+
+  The team needs to decide this, and how to frame the USP to the professor (§7h).
 
 Resolved:
 - **Baseline leakage in 2024-26:** fixed at the source and the rows regenerated. The corrected
@@ -333,4 +669,10 @@ for w in 10 20; do
   .venv/bin/python -m src.Pregame.shap_analysis --window $w
 done
 .venv/bin/python -m src.Pregame.leakage_audit
+# Schedule fatigue and travel (§7), window 20 only
+.venv/bin/python -m unittest Tests.test_schedule_features
+.venv/bin/python -m src.Pregame.schedule_features      # Data/pregame/schedule_features.csv
+.venv/bin/python -m src.Pregame.schedule_experiments   # trains the 3 new models if not saved
+.venv/bin/python -m src.Pregame.schedule_replication
+.venv/bin/python -m src.Pregame.schedule_shap
 ```
