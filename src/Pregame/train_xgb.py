@@ -145,6 +145,21 @@ def train_feature_set(games, feature_set, feature_columns, trials, n_splits, see
     return {"n_features": X.shape[1], "n_train": int(is_train.sum()), **best, "metrics": metrics}
 
 
+def rescore_feature_set(games, feature_set, feature_columns, window, saved):
+    """Score a saved model on the current labels; tuning results are kept from the saved run."""
+    X = games[feature_columns[feature_set]].astype(float)
+    y = games[TARGET].astype(int).to_numpy()
+    booster = xgb.Booster()
+    booster.load_model(str(model_path(feature_set, window)))
+    if booster.num_features() != X.shape[1]:
+        raise ValueError(f"{feature_set}: saved model has {booster.num_features()} features, data has {X.shape[1]}")
+    metrics = {}
+    for split in EVAL_SPLITS:
+        mask = (games["split"] == split).to_numpy()
+        metrics[split] = evaluate(y[mask], booster.predict(xgb.DMatrix(X[mask])))
+    return {**{k: v for k, v in saved.items() if k != "metrics"}, "metrics": metrics}
+
+
 def markdown_report(results, window):
     lines = [f"# XGBoost: season-to-date (repo) vs rolling pre-game features (window={window})", ""]
     header = "| Model | Split | n | Accuracy | Precision | Recall | F1 | AUC | Log loss | Brier | Home-win rate |"
@@ -175,11 +190,19 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--feature-sets", nargs="+", default=["repo", "pregame", "pregame_margin"],
                         choices=["repo", "pregame", "pregame_margin"])
+    parser.add_argument("--rescore", action="store_true",
+                        help="Score the saved models on the current labels without retraining.")
     args = parser.parse_args()
 
     games, feature_columns = load_games(args.window)
-    results = {fs: train_feature_set(games, fs, feature_columns, args.trials, args.splits, args.seed, args.window)
-               for fs in args.feature_sets}
+    if args.rescore:
+        saved = json.loads((RESULTS_DIR / f"metrics_w{args.window}.json").read_text())
+        results = {fs: rescore_feature_set(games, fs, feature_columns, args.window, saved[fs])
+                   for fs in args.feature_sets}
+    else:
+        results = {fs: train_feature_set(games, fs, feature_columns, args.trials, args.splits, args.seed,
+                                         args.window)
+                   for fs in args.feature_sets}
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     (RESULTS_DIR / f"metrics_w{args.window}.json").write_text(json.dumps(results, indent=2))
