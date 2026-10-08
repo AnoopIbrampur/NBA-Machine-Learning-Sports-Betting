@@ -4,6 +4,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 DATASET_TABLE = "dataset_2012-26"
 SPLIT_KEYS = BASE_DIR / "Data" / "splits" / "split_keys.csv"
+ARENAS_CSV = BASE_DIR / "Data" / "arenas.csv"
+OFFSITE_GAMES_CSV = BASE_DIR / "Data" / "offsite_games.csv"
 
 # Regenerable artifacts (gitignored).
 WORK_DIR = BASE_DIR / "Data" / "pregame"
@@ -12,12 +14,17 @@ MODEL_DIR = WORK_DIR / "models"
 
 # Small outputs kept in git for the report.
 RESULTS_DIR = BASE_DIR / "results" / "pregame"
+SCHEDULE_RESULTS_DIR = RESULTS_DIR / "schedule"
 
 GAME_KEY = ["Date", "TEAM_NAME", "TEAM_NAME.1"]  # game date, home team, away team
 
 
 def features_path(window):
     return WORK_DIR / f"pregame_features_w{window}.csv"
+
+
+def schedule_features_path():
+    return WORK_DIR / "schedule_features.csv"
 
 
 def model_path(feature_set, window):
