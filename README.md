@@ -161,7 +161,7 @@ the actual winner. It trains nothing, and it labels whether the model trained on
 
 ```bash
 .venv/bin/python -m src.Pregame.demo --date 2026-03-15
-.venv/bin/python -m src.Pregame.demo --date 2026-03-15 --team Lakers --reasons 5
+.venv/bin/python -m src.Pregame.demo --date 2026-03-15 --team Thunder --reasons 5
 ```
 
 ### Where results live
