@@ -357,7 +357,7 @@ from parent paper 3 and a supporting paper, then measures whether it helps.
 - **Prediction:** no new feature set beats the repo baseline or the pre-game model on test. Only 1
   of the 24 headline 95% CIs excludes zero, and it does not hold up on the other split or the other
   metric (§7d).
-- **Replication:** the back-to-back effect itself is clearly in our data and largely replicates
+- **Replication:** the back-to-back effect itself is clearly in our data and partly replicates
   Bowman's odds ratios for the visitor (§7f). The models already capture it through rest days.
 
 All files are in `results/pregame/schedule/`.
@@ -544,13 +544,19 @@ No other slices were examined.
 Logistic regression of home win on Bowman's schedule variables. Source:
 `results/pregame/schedule/replication.md`.
 
+This is a partial replication by design. It uses 8 variables adapted from Bowman's 20, not their full
+model, and 2012-22 seasons against their 2000-01 to 2018-19.
+
 - **Games:** training split (2012-11 → 2022-01), excluding the 172 restart games, 18 off-site games
   and 33 games with missing rest or travel, which leaves n = 11,650.
-- **Primary control:** team-by-season dummies for home and visitor, as in the paper. The fit is
-  stable: converged, full rank (598 columns), largest SE 1.08. One home dummy per season and one
-  visitor dummy are dropped for identifiability.
+- **Primary control:** team-by-season dummies for home and visitor. This is not the paper's control:
+  Bowman's are dummies identifying the home and visiting teams (§2.3, footnote 7), with no season
+  interaction described. Ours are more detailed. The fit is stable: converged, full rank (598
+  columns), largest SE 1.08. One home dummy per season and one visitor dummy are dropped for
+  identifiability.
 - **Second control (check):** both teams' season-to-date win % from the repo dataset.
 - **Reference rest:** 2 days.
+- **Bowman's home back-to-back value:** 0.806 is from their Table 1. Their §2.3 text says 0.86.
 
 | Variable | Games | Bowman | Ours, team-season dummies (95% CI) | Ours, win % control (95% CI) |
 |---|---|---|---|---|
@@ -565,8 +571,10 @@ Logistic regression of home win on Bowman's schedule variables. Source:
 
 **Replicates**
 - **Visitor back-to-back** favours the home team. The direction matches Bowman and the effect is
-  significant under both controls, but smaller (1.31 vs 1.51).
-- **Rest of 3+ days** is not different from 2 days, as in Bowman.
+  significant under both controls, but smaller (1.31 vs 1.51). Our interval does not reach Bowman's
+  value.
+- **Rest of 3+ days** is not different from 2 days. Bowman finds the same for 3 and for 4 days. Our
+  variable pools all 3+ days, while Bowman reports each rest length separately.
 
 **Same direction, not significant**
 - **Home back-to-back:** 0.90 vs 0.81.
@@ -577,10 +585,28 @@ Logistic regression of home win on Bowman's schedule variables. Source:
   win % control.
 
 **Does not replicate**
-- **Games-in-the-last-week variables.** Our definition counts the team's games in the 7 days
-  before game day. With it, "visitor played 3+" is true in 9,730 of 11,650 games, almost a
-  constant. Bowman's exact window may differ, so this is a definitional mismatch as much as a
-  finding.
+- **Games-in-the-last-week variables.** Bowman's Table 1 defines these as ">=3" and ">=4 games in
+  the last week (not a back-to-back game)" (SFV13, SFV15). The table above does not apply that
+  restriction, so these two rows are not like-for-like: "visitor played 3+" is true in 9,730 of
+  11,650 games, almost a constant. Applying the restriction does not bring them back (below), so the
+  missing restriction does not explain the mismatch.
+
+**Sensitivity check: Bowman's "not a back-to-back game" restriction.** The main coefficients above
+stay as they are. This is a separate refit on the same 11,650 games and controls, from
+`bowman_week_restriction` in `src/Pregame/schedule_replication.py`. Source:
+`results/pregame/schedule/replication_week_restriction.md`.
+
+| Variable | Games, restricted | Bowman | Main, team-season dummies | Restricted, team-season dummies | Restricted, win % control |
+|---|---|---|---|---|---|
+| Visitor played 3+ games in the last week | 7,026 | 1.153 | 0.995 [0.880, 1.124] | 0.981 [0.860, 1.118] | 0.978 [0.868, 1.103] |
+| Home played 4+ games in the last week | 2,698 | 0.914 | 1.041 [0.940, 1.152] | 1.060 [0.948, 1.185] | 1.015 [0.918, 1.122] |
+| Visitor on a back-to-back | 2,930 | 1.506 | 1.311 [1.180, 1.457] | 1.288 [1.102, 1.506] | 1.264 [1.096, 1.457] |
+
+- **Both week variables stay near 1 and not significant.** The visitor variable stays on the opposite
+  side of 1 from Bowman's, and so does the home one.
+- **Visitor back-to-back stays significant and is a little smaller.** Its interval widens: the upper
+  bound rounds to 1.506 (1.5057), so under this check it just about touches Bowman's value. The main
+  result, whose interval stops at 1.457, is unchanged.
 
 **Raw home-win rate by back-to-back situation, all split games.** From the dataset's Days-Rest
 columns (n = 16,957 after the §10 fix; the pre-fix n = 16,963 reproduced the numbers we started
@@ -642,12 +668,15 @@ Share of total mean |SHAP| by group:
 - **Richer fatigue and travel features do not move accuracy, AUC or log loss** beyond noise on
   either held-out period, overall or on back-to-back games.
 - **What the USP can honestly claim:** a careful, leakage-tested measurement of schedule effects
-  that replicates parent paper 3's main finding on 2012-22 data. It cannot claim that schedule
-  features improve prediction.
+  that partly replicates parent paper 3's main finding on 2012-22 data. It cannot claim that
+  schedule features improve prediction.
 
 **Limitations**
+- **Replication scope:** 8 variables adapted from Bowman's 20, so the coefficients are not estimated
+  alongside the same set of schedule variables as theirs. Why our numbers differ from theirs has not
+  been tested.
 - **Definition choices that could matter:**
-  - the 7-day window for "games in the last week";
+  - the 7-day window for "games in the last week", counted before game day;
   - the jet-lag formula as specified (with Leota's "one rest day" read as one day since the previous
     game);
   - games after postponements use the date actually played, not the originally published date.
@@ -985,8 +1014,8 @@ recorded tuning results. `leakage_audit`, `schedule_experiments`, `schedule_repl
 
 ```bash
 python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
-.venv/bin/python -m unittest discover -s Tests -t .   # all tests
 .venv/bin/python -m src.Pregame.game_logs            # download game logs (cached)
+.venv/bin/python -m unittest discover -s Tests -t .   # all tests; 4 skip without the game logs
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w

@@ -73,7 +73,9 @@ Bold intervals exclude 1. The "Games" column counts our games.
   interval does not reach Bowman's 1.506.
 - **Visitor long trip:** 1.32 vs 1.26, significant with dummies but not with the win % control.
 - **Games-in-the-last-week rows are not like-for-like.** Bowman's variables exclude back-to-back games;
-  these two rows do not apply that restriction.
+  these two rows do not. A labelled sensitivity check adds the restriction, and they stay near 1
+  (0.981 [0.860, 1.118] and 1.060 [0.948, 1.185]), so it does not explain the mismatch. In that check
+  visitor back-to-back is 1.288 [1.102, 1.506]. Main coefficients are unchanged.
 - **Rested rows pool 3+ days.** Bowman reports each rest length separately.
 - **Why the numbers differ has not been tested.** Season range, controls and variable set are likely
   reasons, not established ones.
@@ -93,7 +95,7 @@ python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
 
 ```bash
 .venv/bin/python -m src.Pregame.game_logs             # download game logs from stats.nba.com
-.venv/bin/python -m unittest discover -s Tests -t .   # expect 62 tests, 0 skipped
+.venv/bin/python -m unittest discover -s Tests -t .   # expect 64 tests, 0 skipped
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w
@@ -117,7 +119,7 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
   logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
   on every endpoint. If it is down, `game_logs` and every step after it cannot run. The committed
   results below stay readable.
-- **Tests before the download:** without the game logs, 4 of the 62 tests skip.
+- **Tests before the download:** without the game logs, 4 of the 64 tests skip.
 - **Already applied, do not rerun:** `scripts/fix_game_results.py` repaired the committed data and
   rewrites tracked database files.
 
@@ -127,9 +129,9 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 |---|---|
 | `docs/findings.md` | Full write-up and every number |
 | `results/pregame/` | Main metrics, bootstrap CIs (`leakage_audit.md`), SHAP |
-| `results/pregame/schedule/` | Schedule models, slices, `replication.md` (Bowman comparison) |
+| `results/pregame/schedule/` | Schedule models, slices, Bowman comparison (`replication.md`) and its sensitivity check (`replication_week_restriction.md`) |
 | `results/pregame/market/` | Market benchmark and back-to-back tests |
-| `results/pregame/pre_fix/`, `pre_label_fix/` | Superseded results, kept for the record |
+| `results/pregame/pre_fix/`, `pre_label_fix/`, `shap_superseded_n3390/` | Superseded results, kept for the record |
 | `docs/report/` | Report drafts |
 
 ---
