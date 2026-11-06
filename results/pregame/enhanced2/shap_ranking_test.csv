@@ -1,0 +1,33 @@
+feature,mean_abs_shap,group
+elo2_diff,0.41151142,Elo
+player_strength_lastgame_diff,0.10970594,Player
+player_strength_diff,0.069949955,Player
+elo2_home,0.06617704,Elo
+rest_days_away,0.033042446,Schedule
+player_strength_lastgame_away,0.022605889,Player
+home_win_pct_at_home,0.017824188,Win record
+player_continuity_home,0.01546619,Player
+2P%_diff,0.0142004825,Box-score stats
+player_continuity_away,0.012072143,Player
+player_availability_home,0.010706251,Player
+ORB_diff,0.010641694,Box-score stats
+player_strength_away,0.0102541605,Player
+player_strength_lastgame_home,0.0072990707,Player
+b2b_away,0.005730153,Schedule
+player_availability_away,0.005379488,Player
+PF_diff,0.003316582,Box-score stats
+DRB_diff,0.0027131634,Box-score stats
+AST_diff,0.0024194391,Box-score stats
+player_strength_home,0.0023731112,Player
+elo2_away,0.002105764,Elo
+3P%_diff,0.0019894943,Box-score stats
+away_win_pct_on_road,0.0012566824,Win record
+STL_diff,0.0011751963,Box-score stats
+TOV_diff,0.0008583723,Box-score stats
+FG%_diff,0.0,Box-score stats
+rest_days_home,0.0,Schedule
+win_pct_away,0.0,Win record
+win_pct_home,0.0,Win record
+BLK_diff,0.0,Box-score stats
+FT%_diff,0.0,Box-score stats
+b2b_home,0.0,Schedule

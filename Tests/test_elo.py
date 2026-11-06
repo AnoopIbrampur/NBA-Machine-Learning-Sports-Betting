@@ -7,7 +7,7 @@ import pandas as pd
 from src.Pregame.elo import START_RATING, choose_k, expected_score, game_pairs, pregame_elo
 from src.Pregame.features import team_games
 from src.Pregame.game_logs import load_game_logs
-from src.Pregame.paths import ENHANCED_RESULTS_DIR, GAME_LOGS_DB
+from src.Pregame.paths import ENHANCED_RESULTS_DIR, GAME_LOGS_DB, features_path
 from src.Pregame.train_xgb import TARGET, load_games
 
 ROUND_ONE = ENHANCED_RESULTS_DIR / "training.json"
@@ -139,7 +139,8 @@ class EloVariantTest(unittest.TestCase):
             pd.testing.assert_frame_equal(base.iloc[: game + 1], pregame_elo(changed, 20, 50, 0.25, True).iloc[: game + 1])
 
 
-@unittest.skipIf(not GAME_LOGS_DB.exists() or not ROUND_ONE.exists(), "needs game logs and round 1 results")
+@unittest.skipIf(not GAME_LOGS_DB.exists() or not ROUND_ONE.exists() or not features_path(20).exists(),
+                 "needs game logs, window 20 features and round 1 results")
 class RoundOneUnchangedTest(unittest.TestCase):
     def test_default_elo_reproduces_the_committed_k_search(self):
         games, _ = load_games(20)

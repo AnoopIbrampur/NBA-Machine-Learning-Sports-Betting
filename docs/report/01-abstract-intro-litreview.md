@@ -19,8 +19,9 @@ held on back-to-back games specifically. The effect itself is real. On training 
 playing a back-to-back raised the home team's odds of winning by a factor of 1.31 (95% CI 1.18 to
 1.46). However, a betting-market line outperformed all of our models (test accuracy 0.6790, AUC
 0.7255), and once that line was controlled for, back-to-back situations added no significant
-information. A leakage-free Elo rating became the strongest input, and a stacked model reached test
-accuracy 0.6480 and AUC 0.6888, but no model beat the season-to-date baseline on both held-out periods.
+information. A leakage-free Elo rating became the strongest input. A stacked model with Elo and player
+features reached test accuracy 0.6474 and AUC 0.6935, beating the season-to-date baseline on AUC, but not
+accuracy, on both held-out periods. Our pre-specified primary model narrowly missed that test.
 We conclude that fatigue affects results, but that its effect is already reflected in
 rest-day features and in market prices.
 
@@ -58,8 +59,9 @@ the same chronological split. Second, we turn back-to-back status from two binar
 fatigue and travel feature group based on Bowman et al. and Leota et al., using arena locations and
 time zones computed for the actual game dates. Third, we replicate Bowman et al.'s odds multipliers
 on our own seasons. Fourth, we add a test those papers do not run together: whether back-to-backs
-carry information beyond the betting market. Fifth, we add a leakage-free Elo rating, out-of-fold
-stacking and a calibration comparison, all specified before results were computed. Evaluation slices were fixed before results were seen,
+carry information beyond the betting market. Fifth, we add a leakage-free Elo rating, player-based
+features, out-of-fold stacking, rolling retraining and a calibration comparison, all specified before
+their results were computed. Evaluation slices were fixed before results were seen,
 and a null result was treated as a valid outcome.
 
 We also found and corrected two data errors in the code base we started from: same-game leakage in
@@ -168,5 +170,5 @@ methodology. *PLOS ONE, 19*(7), e0307478. https://doi.org/10.1371/journal.pone.0
   0.86. This draft uses the table value.
 - **Alves & Barbosa Equation (1):** it prints k(S - E + R). Our method follows the standard update and
   should say so in the Methods section.
-- **Abstract and contributions:** they now include Elo, stacking and calibration. See findings section
-  11 for the full results.
+- **Abstract and contributions:** they now include rounds 1 and 2. See findings sections 11 and 12. Round
+  2 wasn't blind, and the Methods section should say so.

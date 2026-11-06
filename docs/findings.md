@@ -49,8 +49,18 @@ flags into a full fatigue and travel feature group, following parent paper 3 (Bo
   42.9% (train / test / validation), the same direction as the 45.86% Ashman, Bowman & Lambrinos
   reported for 1990-2009.
 
-**Modified Implementation (§11): Elo helps, but the baseline still isn't beaten.** The official feature
-set stays pre-game window 20; these are labelled extensions, fixed in advance in `docs/enhanced-plan.md`.
+**Modified Implementation (§11, §12): Elo and player features help on AUC, not on accuracy.** The official
+feature set stays pre-game window 20; these are labelled extensions with plans fixed in advance.
+
+Round 2 (§12) is the latest result, and it wasn't blind, because round 1 motivated it.
+- **Primary test: not met.** Pre-game + Elo variant + player features beats the baseline on test AUC, but
+  the validation interval just includes zero ([−0.0008, +0.0237]).
+- **Secondary rows do beat the baseline on AUC on both splits:** stack 2, repo + Elo variant + player, and
+  rolling stack 2. No row beats it on accuracy on either split.
+- **Rolling retraining shows no demonstrated gain.**
+- **The market stays ahead on AUC** on both splits.
+
+Round 1 (§11):
 - **Best rows of ours.** The stack scores 0.6480 / 0.6888 on test and 0.6562 / 0.7132 on validation
   (accuracy / AUC), the highest AUC of any model of ours on both splits. Repo + Elo has the lowest test
   log loss (0.6290 vs 0.6292); the stack has the lowest on validation.
@@ -1154,12 +1164,112 @@ hold few games, so the ends of the curves are noisy.
 - Base-model parameters for stacking were tuned on the same train folds as its out-of-fold predictions.
 - Only one Elo design was tested: no home-court term and no between-season regression.
 
+## 12. Modified Implementation, round 2: Elo variant, player data and rolling retraining
+
+Plan fixed before these results existed: `docs/enhanced-plan-2.md`. **This round isn't blind:** round 1's
+test and validation results motivated it, so its gains deserve less trust than a first look would.
+Outputs: `results/pregame/enhanced2/`. Earlier models and results were checksummed before and after, and
+didn't change. Code: `src/Pregame/player_logs.py`, `player_features.py`, `rolling.py`, `enhanced2.py`.
+
+**Short answer: the primary test narrowly fails, but secondary rows beat the baseline on AUC on both
+splits. Nothing beats it on accuracy, and rolling retraining adds nothing demonstrable.**
+
+### 12a. What was added
+
+- **Elo variant, chosen on train only:** k = 16, home advantage 100, one-third regression toward 1500 each
+  season, margin of victory on (walk-forward log loss 0.61935, against 0.62186 for round 1's Elo). The k,
+  home and regression picks all sit at the edge of the grid. The grid wasn't widened, because the plan
+  fixed it.
+- **Player data:** 384,340 player-game rows from stats.nba.com. Player points sum exactly to team points
+  in every played game, and minutes agree within 5 (`Tests/test_player_features.py`).
+- **Player features:** rotation strength from each player's rating over earlier games, availability
+  from who appeared in the team's previous game, and roster continuity from last season. All are read
+  before a date's rows update anything. Leakage tests alter a game's own and later player rows.
+- **Our box-score value** is our own definition, not a source's. Replacement level, from train games, is
+  9.114 per 36 minutes.
+- **Rolling retraining:** a monthly refit on all earlier games with fixed parameters. Later predictions
+  train on earlier test and validation games, as a live system would, so these rows aren't "trained on
+  train only". Nothing is tuned on held-out data.
+
+### 12b. Results: same 3,386 test and 1,681 validation games
+
+| Row | Test acc | Test AUC | Test log loss | Val acc | Val AUC | Val log loss |
+|---|---|---|---|---|---|---|
+| Baseline: repo season-to-date | 0.6400 | 0.6793 | 0.6350 | 0.6556 | 0.7089 | 0.6221 |
+| Pre-game w20 (official) | 0.6435 | 0.6746 | 0.6372 | 0.6419 | 0.6987 | 0.6275 |
+| Round 1 stack | 0.6480 | 0.6888 | 0.6292 | 0.6562 | 0.7132 | 0.6169 |
+| Pre-game + Elo variant | 0.6480 | 0.6892 | 0.6290 | 0.6538 | 0.7167 | 0.6154 |
+| **Primary: pre-game + Elo variant + player** | 0.6456 | 0.6918 | 0.6262 | 0.6615 | 0.7206 | 0.6136 |
+| Repo + Elo variant + player | 0.6509 | 0.6943 | 0.6256 | 0.6633 | 0.7224 | 0.6122 |
+| Stack 2: repo, pre-game, primary | 0.6474 | 0.6935 | 0.6255 | 0.6663 | 0.7220 | 0.6115 |
+| Rolling baseline | 0.6415 | 0.6805 | 0.6339 | 0.6532 | 0.7090 | 0.6211 |
+| Rolling primary | 0.6521 | 0.6914 | 0.6262 | 0.6585 | 0.7197 | 0.6130 |
+| Rolling stack 2 | 0.6500 | 0.6933 | 0.6254 | 0.6609 | 0.7217 | 0.6111 |
+| *Market (reference, not our model)* | 0.6790 | 0.7255 | 0.6036 | 0.6811 | 0.7420 | 0.5925 |
+
+AUC difference CIs against the baseline (all comparisons are in `metrics_w20.md`):
+
+| Row | Test | Validation | Gain under the plan's rule? |
+|---|---|---|---|
+| **Primary** | **[+0.0020, +0.0228]** | [−0.0008, +0.0237] | **No, test only. Primary test not met.** |
+| Pre-game + Elo variant | **[+0.0004, +0.0196]** | [−0.0041, +0.0196] | No, test only |
+| Repo + Elo variant + player | **[+0.0069, +0.0234]** | **[+0.0033, +0.0235]** | **Yes** (secondary) |
+| Stack 2 | **[+0.0067, +0.0217]** | **[+0.0039, +0.0223]** | **Yes** (secondary) |
+| Rolling primary | **[+0.0018, +0.0221]** | [−0.0015, +0.0228] | No, test only |
+| Rolling stack 2 | **[+0.0066, +0.0213]** | **[+0.0034, +0.0220]** | **Yes** (secondary) |
+
+**Reading the results**
+- **Primary test not met,** by a small margin on validation. It's reported as not met.
+- **Three secondary rows beat the baseline on AUC on both splits.** This is the first time any row of
+  ours has. All three include the baseline's own features or predictions.
+- **No gain on accuracy.** No row's accuracy CI against the baseline excludes zero on either split.
+- **Against the official pre-game model,** every static new row beats it on AUC on both splits, and the
+  primary, repo + Elo variant + player and stack 2 also do on validation accuracy, but not on test
+  accuracy.
+- **Player features alone aren't demonstrated.** Primary against pre-game + Elo variant: AUC
+  [−0.0027, +0.0081] test, [−0.0033, +0.0109] validation. Their effect is visible only combined with the
+  rest, for example in SHAP below.
+- **Rolling retraining adds nothing demonstrable.** Rolling against static: AUC CIs include zero
+  everywhere (baseline [−0.0007, +0.0032] and [−0.0030, +0.0033]). One accuracy CI excludes zero (rolling
+  primary on test, [+0.0009, +0.0121]) and doesn't repeat on validation.
+- **The market stays ahead.** Every AUC CI excludes zero. Market − stack 2: test [+0.0225, +0.0418],
+  validation [+0.0070, +0.0334]. One accuracy CI includes zero: market − stack 2 on validation,
+  [−0.0018, +0.0327].
+- **Volume of tests.** 37 of 92 intervals exclude zero, but many compare against the weaker official
+  model or are market rows, where a difference was expected.
+
+### 12c. Slices and SHAP
+
+- **168 slice intervals against the baseline, 18 exclude zero, all positive.** Chance alone would give
+  about 8.
+- **Back-to-back slices (2 to 4):** none exclude zero, so the §7e finding stands.
+- **Repeats on both splits:** slice 1 (neither team on a b2b) for repo + Elo variant + player, stack 2 and
+  rolling stack 2 on AUC, and slice 7 (early season) for rolling stack 2 on AUC.
+- **SHAP, primary row, test:** Elo 57.1%, player 31.6%, schedule 4.6%, box-score 4.4%, win record 2.3%.
+  The top three features are `elo2_diff`, `player_strength_lastgame_diff` and `player_strength_diff`.
+  Shares are split among correlated features, so they aren't independent effects.
+
+### 12d. Limits
+- **Not blind.** The same test and validation games were used in earlier rounds.
+- **Secondary rows passed, not the primary.** The rule was fixed for all rows, but the primary is the row
+  named in advance.
+- **Player features miss game-day news.** They use the previous game, so they don't see injury and rest
+  decisions made on the day, which the market likely prices.
+- **A second stats.nba.com dependency:** a clean clone also has to download the player logs.
+- **Calibration wasn't part of this plan,** so §11e covers round 1 rows only.
+
+### 12e. Untouched games
+
+The game logs hold 768 games after 2026-01-07 that no analysis has scored. `dataset_2012-26`, the odds
+and the team snapshots all stop at 2026-01-07, so a comparison there could use log-based rows only: no
+baseline and no market. It hasn't been run, and needs a team decision (`docs/enhanced-plan-2.md`).
+
 ## Reproduce
 
 ```bash
 python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
 .venv/bin/python -m src.Pregame.game_logs            # download game logs (cached)
-.venv/bin/python -m unittest discover -s Tests -t .   # all tests; 4 skip without the game logs
+.venv/bin/python -m unittest discover -s Tests -t .   # all tests; some skip until logs and features exist
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w
@@ -1180,4 +1290,8 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
 .venv/bin/python -m src.Pregame.enhanced               # trains only new models under new names
 .venv/bin/python -m src.Pregame.calibration
+# Modified Implementation, round 2 (§12)
+.venv/bin/python -m src.Pregame.player_logs            # download player logs (cached)
+.venv/bin/python -m src.Pregame.enhanced2
+.venv/bin/python -m unittest discover -s Tests -t .    # all tests again: none skip now
 ```
