@@ -49,6 +49,16 @@ flags into a full fatigue and travel feature group, following parent paper 3 (Bo
   42.9% (train / test / validation), the same direction as the 45.86% Ashman, Bowman & Lambrinos
   reported for 1990-2009.
 
+**Modified Implementation (§11): Elo helps, but the baseline still isn't beaten.** The official feature
+set stays pre-game window 20; these are labelled extensions, fixed in advance in `docs/enhanced-plan.md`.
+- **Best rows of ours.** The stack scores 0.6480 / 0.6888 on test and 0.6562 / 0.7132 on validation
+  (accuracy / AUC), with the lowest log loss of any model of ours in both.
+- **No demonstrated gain over the baseline.** No row beats it on the same metric on both splits.
+- **Two gains over the official pre-game model.** The stack and repo + Elo beat it on AUC on both splits.
+- **Hypothesis 2 is half supported.** Elo is the strongest input, but schedule features rank below the
+  middle.
+- **The market stays ahead** of the best new rows, with all CIs excluding zero.
+
 ## 1. What the repo's baseline actually is
 
 - **Source:** `src/Process-Data/Get_Data.py` downloads stats.nba.com `leaguedashteamstats` with
@@ -130,7 +140,8 @@ team's reading of the paper.
   same structure: recent win-record features rank above all 11 box-score stats (§5).
 - **What is not claimed.** This is a structural parallel (engineered context > box score), not a
   claim that the feature sets match.
-  - We use no Elo ratings and no next-opponent features.
+  - The official set uses no Elo ratings and no next-opponent features. Elo is tested separately
+    in §11.
   - Our context features are rolling win %, venue-specific win % and rest days.
   - Paper 2's data, seasons and evaluation protocol also differ from ours. Its abstract reports
     65.50% accuracy for the NBA, which is in the same range as our 0.643–0.648 but not directly
@@ -1010,6 +1021,138 @@ recorded tuning results. `leakage_audit`, `schedule_experiments`, `schedule_repl
 
   See §8.
 
+## 11. Modified Implementation: Elo, stacking and calibration
+
+Everything here is a labelled extension under `results/pregame/enhanced/`. The analysis plan, including
+the gain rule, slices and hypothesis test, was committed before any result existed:
+`docs/enhanced-plan.md`. Existing models and results are unchanged; their files were checksummed before
+and after. Code: `src/Pregame/elo.py`, `stacking.py`, `enhanced.py`, `calibration.py`.
+
+**Short answer: Elo is the strongest input and the best addition so far, but no new row demonstrably
+beats the baseline.**
+
+### 11a. Elo
+
+Follows Alves & Barbosa §3.1.4: start at 1500, full carryover between seasons, k from their range.
+- **Equation:** we use R + k(S − E). Their Equation (1) prints k(S − E + R), which we read as a typo.
+- **Assumed:** they don't define E, so we use the standard 400-point logistic with no home-court term.
+- **Games:** every logged game with a result, in date order, keyed by franchise. Ratings keep updating
+  through test and validation, as rolling features do. Each value uses only earlier games.
+- **Burn-in:** the logs start in 2012-13, so every team starts that season at 1500.
+- **Choosing k, on train only:** 28, by walk-forward log loss of Elo alone (16: 0.62442, 20: 0.62265,
+  24: 0.62195, 28: 0.62186, 32: 0.62212).
+- **Leakage tests:** `Tests/test_elo.py` checks that a game's own and later results don't change its
+  rating. Injecting a leak on purpose made those tests fail.
+- **Deviation:** 2013-04-16 BOS vs IND is logged with no result, so Elo makes no update for it. It isn't
+  in the split, but the existing rolling features count it as a 0-point loss for both teams in
+  2012-13. Those features are left unchanged.
+
+### 11b. Results: same 3,386 test and 1,681 validation games
+
+Source: `results/pregame/enhanced/metrics_w20.md`.
+
+| Model | Test acc | Test AUC | Test log loss | Test Brier | Val acc | Val AUC | Val log loss | Val Brier |
+|---|---|---|---|---|---|---|---|---|
+| Baseline: repo season-to-date | 0.6400 | 0.6793 | 0.6350 | 0.2221 | 0.6556 | 0.7089 | 0.6221 | 0.2165 |
+| Pre-game w20 (official) | 0.6435 | 0.6746 | 0.6372 | 0.2230 | 0.6419 | 0.6987 | 0.6275 | 0.2189 |
+| Elo only: logistic on `elo_diff` | 0.6364 | 0.6793 | 0.6344 | 0.2220 | 0.6449 | 0.7008 | 0.6254 | 0.2182 |
+| Pre-game w20 + Elo | 0.6491 | 0.6875 | 0.6303 | 0.2200 | 0.6478 | 0.7084 | 0.6213 | 0.2162 |
+| Repo + Elo | 0.6462 | 0.6883 | 0.6290 | 0.2195 | 0.6514 | 0.7123 | 0.6178 | 0.2147 |
+| Pre-game + fatigue + travel + Elo | 0.6453 | 0.6880 | 0.6303 | 0.2200 | 0.6550 | 0.7074 | 0.6219 | 0.2164 |
+| **Stack** | 0.6480 | 0.6888 | 0.6292 | 0.2195 | 0.6562 | 0.7132 | 0.6169 | 0.2143 |
+| Ablation: pre-game window 5 | 0.6170 | 0.6372 | 0.6550 | 0.2315 | 0.6193 | 0.6712 | 0.6446 | 0.2268 |
+| Ablation: pre-game window 7 | 0.6288 | 0.6546 | 0.6479 | 0.2281 | 0.6312 | 0.6749 | 0.6424 | 0.2257 |
+| *Market (reference, not our model)* | 0.6790 | 0.7255 | 0.6036 | 0.2081 | 0.6811 | 0.7420 | 0.5925 | 0.2040 |
+
+Paired bootstrap 95% CIs of the AUC difference (accuracy CIs are in the results file):
+
+| Row | Reference | Test | Validation | Gain under the plan's rule? |
+|---|---|---|---|---|
+| Elo only | repo | [−0.0102, +0.0104] | [−0.0225, +0.0062] | No |
+| Pre-game + Elo | repo | [−0.0010, +0.0171] | [−0.0125, +0.0116] | No |
+| Repo + Elo | repo | **[+0.0022, +0.0159]** | [−0.0063, +0.0129] | No, test only |
+| Pre-game + fatigue + travel + Elo | repo | [−0.0009, +0.0181] | [−0.0140, +0.0109] | No |
+| Stack | repo | **[+0.0036, +0.0152]** | [−0.0037, +0.0125] | No, test only |
+| Pre-game + Elo | pregame | **[+0.0047, +0.0212]** | [−0.0012, +0.0208] | No, test only |
+| Repo + Elo | pregame | **[+0.0033, +0.0243]** | **[+0.0003, +0.0270]** | **Yes** |
+| Pre-game + fatigue + travel + Elo | pregame | **[+0.0043, +0.0222]** | [−0.0033, +0.0206] | No, test only |
+| Stack | pregame | **[+0.0049, +0.0237]** | **[+0.0029, +0.0266]** | **Yes** |
+| Pre-game + fatigue + travel + Elo | pre-game + fatigue + travel | **[+0.0030, +0.0205]** | [−0.0046, +0.0195] | No, test only |
+
+**Reading the results**
+- **No row beats the baseline under the rule.** No accuracy CI against the baseline excludes zero in
+  the positive direction on either split. The AUC gains on test don't repeat on validation.
+- **Two rows beat the official pre-game model on AUC on both splits.** Neither gain appears on accuracy.
+  Repo + Elo starts from a different feature set, so its gain isn't an Elo effect alone. The validation
+  lower bound for repo + Elo is +0.0003, a close call.
+- **Adding Elo to the official set directly** passes on test only (validation includes zero).
+- **One feature goes a long way.** Elo alone matches the baseline's test AUC (0.6793) and is
+  statistically tied with it on both splits.
+- **Windows 5 and 7 are worse.** Both are significantly below the baseline on AUC on both splits, which
+  continues the pattern from window 10.
+- **The market stays ahead.** Market − stack: accuracy [+0.0174, +0.0455] test, [+0.0077, +0.0422]
+  validation; AUC [+0.0263, +0.0479] test, [+0.0153, +0.0426] validation.
+- **Stack weights** (logit scale, fit on 9,890 train rows): repo 0.485, pre-game −0.191, pre-game + Elo
+  0.769. The negative weight reflects overlap between the two pre-game models, so don't read it alone.
+
+### 11c. Slices
+
+The six §7e slices plus one new slice fixed in the plan. All are in `metrics_w20.md`.
+- **144 slice intervals against the baseline; 22 exclude zero.** 12 are negative, all for windows 5 and
+  7. 10 are positive, all on test, and none repeats on validation.
+- **Back-to-back slices (2 to 4):** no positive interval on either split, so Elo doesn't change the §7e
+  picture on back-to-back games.
+- **Slice 7, either team under 20 games this season (735 test, 434 validation games).** This is where
+  carryover Elo was expected to help. On test, the baseline's AUC is 0.634 against 0.666 for pre-game +
+  Elo (CI [+0.0036, +0.0605]) and 0.664 for the stack (CI [+0.0084, +0.0514]). On validation the
+  intervals include zero: 0.722 for the baseline, 0.718 for pre-game + Elo and 0.730 for the stack.
+  Suggestive, not established.
+
+### 11d. Hypothesis 2: half supported
+
+Tested as fixed in the plan on pre-game + fatigue + travel + Elo (43 features), by mean |SHAP|.
+
+| Measure | Test | Validation |
+|---|---|---|
+| Top feature | `elo_diff` | `elo_diff` |
+| Elo share | 60.4% | 62.6% |
+| Box-score share | 21.6% | 20.4% |
+| Schedule share | 10.0% | 9.2% |
+| Win-record share | 8.0% | 7.8% |
+| Schedule median rank (middle third is 15 to 28) | 31 | 31 |
+
+- **Elo strongest: yes.** `elo_diff` ranks #1 and the Elo group has the largest share.
+- **Schedule in the middle: no.** The median schedule feature ranks 31 of 43, below the middle third.
+  The best schedule features do sit mid-table: `rest_diff` is #9 and `travel_km_away` #10 on test.
+- **Credit is shared.** Win-record features drop from 58% in §5 to 8% here, which suggests Elo and win
+  record carry much of the same signal. Their shares can't be read as independent effects.
+
+### 11e. Calibration
+
+Source: `results/pregame/enhanced/calibration.md`, plot `reliability.png`. Nothing is refit. Tail bins
+hold few games, so the ends of the curves are noisy.
+
+| Row | Test ECE | Test slope | Validation ECE | Validation slope |
+|---|---|---|---|---|
+| Baseline | 0.0140 | 1.073 | 0.0294 | 1.258 |
+| Pre-game w20 | 0.0218 | 1.038 | 0.0218 | 1.103 |
+| Pre-game + fatigue + travel | 0.0246 | 1.006 | 0.0299 | 1.065 |
+| Pre-game + Elo | 0.0142 | 1.057 | 0.0364 | 1.087 |
+| Stack | 0.0143 | 1.037 | 0.0181 | 1.116 |
+| Market (reference) | 0.0126 | 0.974 | 0.0279 | 0.977 |
+
+- **Every ECE difference CI includes zero**, so these rows can't be ranked on calibration.
+- **Slopes:** every model of ours is above 1 on both splits, while the market is just below it, in line
+  with §9c.
+- **Validation intercepts are all below 0** (−0.028 to −0.153), meaning home wins are slightly
+  over-predicted in 2024-26, most of all by pre-game + Elo.
+
+### 11f. Limits
+- The gain rule requires both splits, but this section still reports many intervals. A single interval
+  excluding zero isn't strong evidence, and repo + Elo's validation bound is very close to zero.
+- Base-model parameters for stacking were tuned on the same train folds as its out-of-fold predictions.
+- Only one Elo design was tested: no home-court term and no between-season regression.
+
 ## Reproduce
 
 ```bash
@@ -1032,4 +1175,8 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 .venv/bin/python -m src.Pregame.schedule_shap
 # Betting market (§9), window 20 only
 .venv/bin/python -m src.Pregame.market_analysis
+# Modified Implementation (§11)
+for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
+.venv/bin/python -m src.Pregame.enhanced               # trains only new models under new names
+.venv/bin/python -m src.Pregame.calibration
 ```

@@ -94,7 +94,7 @@ def main():
         repo, market = part["p_repo"].to_numpy(), part["p_market"].to_numpy()
         for row in ROWS:
             p = part[f"p_{row}"].to_numpy()
-            if row != "repo":
+            if row not in ("repo", "market"):
                 ci = ece_diff_ci(y, p, repo)
                 results[split][row]["ece_minus_repo_ci"] = ci
                 ci_lines.append(f"| {LABELS[row]} − Baseline | {split} | [{ci[0]:+.4f}, {ci[1]:+.4f}] |")

@@ -19,7 +19,9 @@ held on back-to-back games specifically. The effect itself is real. On training 
 playing a back-to-back raised the home team's odds of winning by a factor of 1.31 (95% CI 1.18 to
 1.46). However, a betting-market line outperformed all of our models (test accuracy 0.6790, AUC
 0.7255), and once that line was controlled for, back-to-back situations added no significant
-information. We conclude that fatigue affects results, but that its effect is already reflected in
+information. A leakage-free Elo rating became the strongest input, and a stacked model reached test
+accuracy 0.6480 and AUC 0.6888, but no model beat the season-to-date baseline on both held-out periods.
+We conclude that fatigue affects results, but that its effect is already reflected in
 rest-day features and in market prices.
 
 ## 1. Introduction
@@ -48,16 +50,16 @@ they rank once we look inside the model?** At the midterm we expected that:
 3. the largest gains would come in games with uneven rest, such as one team on a back-to-back
    against a rested opponent.
 
-We did not build an Elo feature, so we test the second expectation with rolling win-record features
-as the measure of team strength.
+After the midterm we built a leakage-free Elo rating, so we test the second expectation directly.
 
-We make four contributions. First, we replace the in-game inputs of Ouyang et al. with leakage-free
+We make five contributions. First, we replace the in-game inputs of Ouyang et al. with leakage-free
 rolling pre-game features, and we compare them with season-to-date statistics on the same games and
 the same chronological split. Second, we turn back-to-back status from two binary flags into a
 fatigue and travel feature group based on Bowman et al. and Leota et al., using arena locations and
 time zones computed for the actual game dates. Third, we replicate Bowman et al.'s odds multipliers
 on our own seasons. Fourth, we add a test those papers do not run together: whether back-to-backs
-carry information beyond the betting market. Evaluation slices were fixed before results were seen,
+carry information beyond the betting market. Fifth, we add a leakage-free Elo rating, out-of-fold
+stacking and a calibration comparison, all specified before results were computed. Evaluation slices were fixed before results were seen,
 and a null result was treated as a valid outcome.
 
 We also found and corrected two data errors in the code base we started from: same-game leakage in
@@ -164,7 +166,7 @@ methodology. *PLOS ONE, 19*(7), e0307478. https://doi.org/10.1371/journal.pone.0
   because it couldn't be checked against the paper.
 - **Bowman home back-to-back:** Table 1 gives 0.806, but the paper's own text in section 2.3 says
   0.86. This draft uses the table value.
-- **Hypothesis 2 and Elo:** the text keeps the midterm wording and says Elo wasn't built. If Elo gets
-  built, remove that sentence.
-- **Abstract and contributions:** they describe the work as it stands, so update them if Elo,
-  stacking or calibration are added.
+- **Alves & Barbosa Equation (1):** it prints k(S - E + R). Our method follows the standard update and
+  should say so in the Methods section.
+- **Abstract and contributions:** they now include Elo, stacking and calibration. See findings section
+  11 for the full results.

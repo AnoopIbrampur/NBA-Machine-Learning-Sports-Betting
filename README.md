@@ -48,6 +48,21 @@ Test n = 3,386; validation n = 1,681.
   controlled for, no back-to-back situation's odds multiplier differs from 1 in train, test or
   validation. Whether it is a closing line can't be confirmed from this repo.
 
+**Modified Implementation** (labelled extensions, fixed in advance in
+[docs/enhanced-plan.md](docs/enhanced-plan.md); findings §11):
+
+| Row | Test acc | Test AUC | Validation acc | Validation AUC |
+|---|---|---|---|---|
+| Elo only (logistic on rating difference) | 0.6364 | 0.6793 | 0.6449 | 0.7008 |
+| Pre-game w20 + Elo | 0.6491 | 0.6875 | 0.6478 | 0.7084 |
+| Stack: baseline, pre-game, pre-game + Elo | 0.6480 | 0.6888 | 0.6562 | 0.7132 |
+
+- **Elo:** the strongest input by SHAP, but schedule features rank below the middle, so midterm
+  hypothesis 2 is half supported.
+- **Against the baseline:** no demonstrated gain. No row beats it on the same metric on both splits.
+- **Against the official pre-game model:** the stack and repo + Elo beat it on AUC on both splits.
+- **Market:** still significantly ahead.
+
 ### Comparison with Bowman et al.: a partial match
 
 Odds multipliers for a home win (above 1 favours the home team), reference rest 2 days.
@@ -95,7 +110,7 @@ python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
 
 ```bash
 .venv/bin/python -m src.Pregame.game_logs             # download game logs from stats.nba.com
-.venv/bin/python -m unittest discover -s Tests -t .   # expect 64 tests, 0 skipped
+.venv/bin/python -m unittest discover -s Tests -t .   # expect 84 tests, 0 skipped
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w
@@ -110,6 +125,10 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 .venv/bin/python -m src.Pregame.schedule_shap
 # Betting market (window 20 only)
 .venv/bin/python -m src.Pregame.market_analysis
+# Modified Implementation
+for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
+.venv/bin/python -m src.Pregame.enhanced
+.venv/bin/python -m src.Pregame.calibration
 ```
 
 - **Runtime:** about 15 minutes in total, from one clean-clone run on Nov 6, 2026, covering a fresh
@@ -119,7 +138,7 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
   logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
   on every endpoint. If it is down, `game_logs` and every step after it cannot run. The committed
   results below stay readable.
-- **Tests before the download:** without the game logs, 4 of the 64 tests skip.
+- **Tests before the download:** without the game logs, 4 of the 84 tests skip.
 - **Already applied, do not rerun:** `scripts/fix_game_results.py` repaired the committed data and
   rewrites tracked database files.
 
@@ -131,6 +150,7 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 | `results/pregame/` | Main metrics, bootstrap CIs (`leakage_audit.md`), SHAP |
 | `results/pregame/schedule/` | Schedule models, slices, Bowman comparison (`replication.md`) and its sensitivity check (`replication_week_restriction.md`) |
 | `results/pregame/market/` | Market benchmark and back-to-back tests |
+| `results/pregame/enhanced/` | Elo, stacking, window ablations, SHAP for hypothesis 2, calibration |
 | `results/pregame/pre_fix/`, `pre_label_fix/`, `shap_superseded_n3390/` | Superseded results, kept for the record |
 | `docs/report/` | Report drafts |
 
