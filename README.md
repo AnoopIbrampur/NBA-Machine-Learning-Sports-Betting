@@ -75,7 +75,8 @@ Bold intervals exclude 1. The "Games" column counts our games.
 - **Games-in-the-last-week rows are not like-for-like.** Bowman's variables exclude back-to-back games;
   these two rows do not. A labelled sensitivity check adds the restriction, and they stay near 1
   (0.981 [0.860, 1.118] and 1.060 [0.948, 1.185]), so it does not explain the mismatch. In that check
-  visitor back-to-back is 1.288 [1.102, 1.506]. Main coefficients are unchanged.
+  visitor back-to-back is 1.288 [1.102, 1.5057], just under Bowman's 1.506. Main coefficients are
+  unchanged.
 - **Rested rows pool 3+ days.** Bowman reports each rest length separately.
 - **Why the numbers differ has not been tested.** Season range, controls and variable set are likely
   reasons, not established ones.
