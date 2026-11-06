@@ -1,22 +1,22 @@
-# SHAP rankings: pre-game XGBoost (window=10, test split, n=3390)
+# SHAP rankings: pre-game XGBoost (window=10, test split, n=3386)
 
 ## All features (mean |SHAP|)
 
 |                      |   rank |   mean_abs_shap |
 |:---------------------|-------:|----------------:|
 | home_win_pct_at_home |      1 |          0.1926 |
-| 2P%_diff             |      2 |          0.1622 |
-| away_win_pct_on_road |      3 |          0.1336 |
-| win_pct_home         |      4 |          0.1276 |
+| 2P%_diff             |      2 |          0.1621 |
+| away_win_pct_on_road |      3 |          0.1337 |
+| win_pct_home         |      4 |          0.1275 |
 | win_pct_away         |      5 |          0.1086 |
-| FG%_diff             |      6 |          0.0512 |
-| rest_days_away       |      7 |          0.0486 |
+| FG%_diff             |      6 |          0.0511 |
+| rest_days_away       |      7 |          0.0487 |
 | DRB_diff             |      8 |          0.0482 |
-| BLK_diff             |      9 |          0.0417 |
+| BLK_diff             |      9 |          0.0416 |
 | FT%_diff             |     10 |          0.0408 |
 | STL_diff             |     11 |          0.0385 |
 | TOV_diff             |     12 |          0.0344 |
-| 3P%_diff             |     13 |          0.0297 |
+| 3P%_diff             |     13 |          0.0295 |
 | AST_diff             |     14 |          0.0162 |
 | ORB_diff             |     15 |          0.0153 |
 | PF_diff              |     16 |          0.0147 |

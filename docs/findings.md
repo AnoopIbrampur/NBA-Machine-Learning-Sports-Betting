@@ -242,11 +242,13 @@ values (0.769/0.846, 0.818/0.897, 0.902/0.964); those do not appear in the paper
 ## 5. SHAP: pre-game model vs parent paper 1
 
 Both official pre-game models (11 stats + context, no scoring margin) were explained on the test
-split (n = 3,390), ranking features by mean |SHAP|. This ran before the leakage fix. The fix
-touched neither these models nor their features, and removed only 4 of these test games, so the
-rankings stand. Window=20 is the primary model. The window=10
-results are from the previous check-in and unchanged. Files: `results/pregame/shap_w20.md` and
-`shap_w10.md`, with bar and beeswarm plots for each window.
+split (n = 3,386), ranking features by mean |SHAP|. Window=20 is the primary model. Files:
+`results/pregame/shap_w20.md` and `shap_w10.md`, with bar and beeswarm plots for each window.
+
+These files were regenerated on the corrected test set; the earlier run used n = 3,390, before the
+leakage fix removed 4 test games. Every ranking below is unchanged in both windows. Mean |SHAP|
+moved by at most 0.0002, which leaves the group shares and Spearman correlations below as they
+were. The earlier files are in `results/pregame/shap_superseded_n3390/`.
 
 ### 5a. All features
 
