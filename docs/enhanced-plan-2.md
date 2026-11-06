@@ -95,6 +95,21 @@ All rows and comparisons are reported, including nulls, with the count of interv
 against what chance would give. New SHAP group shares for `pregame_elo2_player` on test are reported,
 adding a Player group. Hypothesis 2 is not retested.
 
+## Fresh holdout: rules fixed before scoring
+Approved on Nov 6, 2026 and fixed here before any holdout score was computed. These rules add to the
+section below.
+- **Games:** every logged game with a home side after 2026-01-07. Labels come from the game logs.
+- **Rows:** `pregame`, `pregame_elo2_player`, `roll_pregame_elo2_player`. No baseline or market, because
+  their data stops at 2026-01-07.
+- **Models:** saved models and saved settings, with no change. The rolling row continues the monthly
+  refits from 2026-01-01, training on all earlier games including earlier holdout games.
+- **Main question:** does `pregame_elo2_player` beat `pregame`? It counts as confirmed if the AUC CI
+  excludes 0 in the positive direction. This is the one comparison treated as confirmatory.
+- **Secondary:** the same CIs for `roll_pregame_elo2_player` against `pregame` and against
+  `pregame_elo2_player`, plus accuracy CIs for all three pairs.
+- **One look:** the scoring run happens once, and no model, feature or row changes after it. Any rerun for
+  a bug is reported here with the reason.
+
 ## Possible fresh holdout (not scored without team approval)
 The game logs hold 768 games after 2026-01-07 that no analysis has scored. `dataset_2012-26` and the odds
 may not cover them, so the baseline and market may be unavailable. The primary split above stays primary.
