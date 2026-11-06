@@ -15,6 +15,7 @@ MODEL_DIR = WORK_DIR / "models"
 # Small outputs kept in git for the report.
 RESULTS_DIR = BASE_DIR / "results" / "pregame"
 SCHEDULE_RESULTS_DIR = RESULTS_DIR / "schedule"
+ENHANCED_RESULTS_DIR = RESULTS_DIR / "enhanced"
 
 GAME_KEY = ["Date", "TEAM_NAME", "TEAM_NAME.1"]  # game date, home team, away team
 
