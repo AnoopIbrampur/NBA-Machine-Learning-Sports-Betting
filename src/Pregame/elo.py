@@ -7,6 +7,9 @@ does not define E, so the standard logistic on a 400-point scale is assumed, wit
 A game's rating columns are read before that game's result is applied, so they depend only on
 earlier games. Each team plays at most once per date, so games are processed by date and then GAME_ID.
 """
+import itertools
+import math
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -16,6 +19,10 @@ from sklearn.model_selection import TimeSeriesSplit
 START_RATING = 1500.0
 K_GRID = (16, 20, 24, 28, 32)
 ELO_FEATURES = ["elo_home", "elo_away", "elo_diff"]
+# Round 2 grid (docs/enhanced-plan-2.md).
+HOME_GRID = (0.0, 50.0, 100.0)
+REGRESSION_GRID = (0.0, 0.25, 1 / 3)
+MARGIN_GRID = (False, True)
 
 
 def expected_score(rating, opponent):
@@ -33,22 +40,47 @@ def game_pairs(team_rows):
     winners = first["WIN"] + second["WIN"]
     if (winners > 1).any():
         raise ValueError("A game cannot have two winners")
-    return pd.DataFrame({"team_a": first["TEAM_ID"], "team_b": second["TEAM_ID"], "a_won": first["WIN"],
-                         "a_home": first["is_home"], "neutral": first["neutral"], "played": winners == 1})
+    pairs = pd.DataFrame({"team_a": first["TEAM_ID"], "team_b": second["TEAM_ID"], "a_won": first["WIN"],
+                          "a_home": first["is_home"], "neutral": first["neutral"], "played": winners == 1})
+    if "SEASON" in first:
+        pairs["season"] = first["SEASON"]
+    if "PLUS_MINUS" in first:
+        pairs["margin"] = first["PLUS_MINUS"].abs()
+    return pairs
 
 
-def pregame_elo(team_rows, k):
-    """Each sited game's ratings before tip-off, indexed by GAME_ID."""
-    ratings = {}
-    records = []
+def margin_multiplier(margin, winner_edge):
+    """A common log-margin form; winner_edge is the winner's pre-game rating edge."""
+    return math.log(margin + 1.0) * 2.2 / (0.001 * winner_edge + 2.2)
+
+
+def pregame_elo(team_rows, k, home_advantage=0.0, regression=0.0, margin=False, no_home_ids=frozenset()):
+    """Each sited game's ratings before tip-off, indexed by GAME_ID.
+
+    The defaults are round 1's Elo. home_advantage enters the expected score only, and is 0 for neutral
+    sites and games in no_home_ids. regression moves a team toward 1500 at its first game of a season.
+    """
+    ratings, last_season, records = {}, {}, []
     for game_id, game in game_pairs(team_rows).iterrows():
         rating_a = ratings.get(game["team_a"], START_RATING)
         rating_b = ratings.get(game["team_b"], START_RATING)
-        if game["a_home"] and not game["neutral"]:
+        if regression:
+            season = game["season"]
+            if last_season.get(game["team_a"], season) != season:
+                rating_a = START_RATING + (1 - regression) * (rating_a - START_RATING)
+            if last_season.get(game["team_b"], season) != season:
+                rating_b = START_RATING + (1 - regression) * (rating_b - START_RATING)
+            ratings[game["team_a"]], ratings[game["team_b"]] = rating_a, rating_b
+            last_season[game["team_a"]] = last_season[game["team_b"]] = season
+        sited = game["a_home"] and not game["neutral"]
+        if sited:
             records.append((game_id, rating_a, rating_b, rating_a - rating_b))
         if not game["played"]:  # logged with no result: 2013-04-16 BOS-IND, listed but never played
             continue
-        change = k * (game["a_won"] - expected_score(rating_a, rating_b))
+        edge = rating_a - rating_b + (home_advantage if sited and game_id not in no_home_ids else 0.0)
+        change = k * (game["a_won"] - 1.0 / (1.0 + 10.0 ** (-edge / 400.0)))
+        if margin:
+            change *= margin_multiplier(game["margin"], edge if game["a_won"] else -edge)
         ratings[game["team_a"]] = rating_a + change
         ratings[game["team_b"]] = rating_b - change
     return pd.DataFrame(records, columns=["GAME_ID"] + ELO_FEATURES).set_index("GAME_ID")
@@ -72,4 +104,15 @@ def choose_k(team_rows, train_game_ids, train_y, grid=K_GRID, n_splits=5):
         elo = pregame_elo(team_rows, k)
         losses[k] = walk_forward_elo_log_loss(elo.loc[train_game_ids, "elo_diff"], train_y, n_splits)
     best = min(grid, key=lambda k: (losses[k], k))
+    return best, losses
+
+
+def choose_variant(team_rows, train_game_ids, train_y, no_home_ids=frozenset(), n_splits=5):
+    """Pick k, home advantage, regression and margin on train games only; ties go to the simplest."""
+    losses = {}
+    for k, home, regression, margin in itertools.product(K_GRID, HOME_GRID, REGRESSION_GRID, MARGIN_GRID):
+        elo = pregame_elo(team_rows, k, home, regression, margin, no_home_ids)
+        losses[(k, home, regression, margin)] = walk_forward_elo_log_loss(
+            elo.loc[train_game_ids, "elo_diff"], train_y, n_splits)
+    best = min(losses, key=lambda key: (losses[key], key))
     return best, losses

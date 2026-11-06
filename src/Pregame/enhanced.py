@@ -76,12 +76,12 @@ def predict_saved(games, columns, feature_set, window=WINDOW):
     return booster.predict(xgb.DMatrix(games[columns].astype(float)))
 
 
-def stack_rows(games, feature_columns, tuned):
+def stack_rows(games, feature_columns, tuned, members=STACK_MEMBERS):
     """Out-of-fold base predictions on train, then the meta-model; scores every game."""
     train = games[games["split"] == "train"]
     y = train[TARGET].astype(int).to_numpy()
     oof = {}
-    for member in STACK_MEMBERS:
+    for member in members:
         X = train[feature_columns[member]].astype(float)
 
         def fit_predict(train_idx, val_idx):
@@ -90,10 +90,10 @@ def stack_rows(games, feature_columns, tuned):
             return booster.predict(xgb.DMatrix(X.iloc[val_idx]))
 
         oof[member] = walk_forward_oof(len(train), fit_predict)
-    meta, usable = fit_meta(np.column_stack([oof[m] for m in STACK_MEMBERS]), y)
-    full = np.column_stack([predict_saved(games, feature_columns[m], m) for m in STACK_MEMBERS])
-    info = {"members": STACK_MEMBERS, "n_meta_rows": int(usable.sum()), "intercept": float(meta.intercept_[0]),
-            "coefficients": dict(zip(STACK_MEMBERS, map(float, meta.coef_[0])))}
+    meta, usable = fit_meta(np.column_stack([oof[m] for m in members]), y)
+    full = np.column_stack([predict_saved(games, feature_columns[m], m) for m in members])
+    info = {"members": list(members), "n_meta_rows": int(usable.sum()), "intercept": float(meta.intercept_[0]),
+            "coefficients": dict(zip(members, map(float, meta.coef_[0])))}
     return predict_meta(meta, full), info
 
 

@@ -10,12 +10,14 @@ OFFSITE_GAMES_CSV = BASE_DIR / "Data" / "offsite_games.csv"
 # Regenerable artifacts (gitignored).
 WORK_DIR = BASE_DIR / "Data" / "pregame"
 GAME_LOGS_DB = WORK_DIR / "GameLogs.sqlite"
+PLAYER_LOGS_DB = WORK_DIR / "PlayerLogs.sqlite"
 MODEL_DIR = WORK_DIR / "models"
 
 # Small outputs kept in git for the report.
 RESULTS_DIR = BASE_DIR / "results" / "pregame"
 SCHEDULE_RESULTS_DIR = RESULTS_DIR / "schedule"
 ENHANCED_RESULTS_DIR = RESULTS_DIR / "enhanced"
+ENHANCED2_RESULTS_DIR = RESULTS_DIR / "enhanced2"
 
 GAME_KEY = ["Date", "TEAM_NAME", "TEAM_NAME.1"]  # game date, home team, away team
 

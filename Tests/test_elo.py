@@ -1,9 +1,16 @@
+import json
 import unittest
 
 import numpy as np
 import pandas as pd
 
 from src.Pregame.elo import START_RATING, choose_k, expected_score, game_pairs, pregame_elo
+from src.Pregame.features import team_games
+from src.Pregame.game_logs import load_game_logs
+from src.Pregame.paths import ENHANCED_RESULTS_DIR, GAME_LOGS_DB
+from src.Pregame.train_xgb import TARGET, load_games
+
+ROUND_ONE = ENHANCED_RESULTS_DIR / "training.json"
 
 
 def schedule(results):
@@ -87,6 +94,61 @@ class EloTest(unittest.TestCase):
         changed = results[:36] + [1 - r for r in results[36:]]
         second, _ = choose_k(schedule(changed), ids, y)
         self.assertEqual(first, second)
+
+
+class EloVariantTest(unittest.TestCase):
+    RESULTS = [1, 0, 1, 1, 0, 0, 1, 1, 0]
+
+    def logs(self):
+        logs = schedule(self.RESULTS)
+        logs["SEASON"] = ["2019-20"] * 8 + ["2020-21"] * 10
+        logs["PLUS_MINUS"] = [12, -12] * 9
+        return logs
+
+    def test_defaults_equal_explicit_round_one_settings(self):
+        logs = self.logs()
+        pd.testing.assert_frame_equal(pregame_elo(logs, 20), pregame_elo(logs, 20, 0.0, 0.0, False, frozenset()))
+
+    def test_home_advantage_changes_the_update_but_not_the_pregame_gap_of_game_one(self):
+        logs = self.logs()
+        elo = pregame_elo(logs, 20, home_advantage=100)
+        self.assertEqual(elo.loc["G000", "elo_diff"], 0.0)
+        expected_gain = 20 * (1 - 1 / (1 + 10 ** (-100 / 400)))
+        self.assertAlmostEqual(elo.loc["G001", "elo_home"], 1500 - expected_gain)
+
+    def test_no_home_ids_removes_the_advantage(self):
+        logs = self.logs()
+        elo = pregame_elo(logs, 20, home_advantage=100, no_home_ids=frozenset({"G000"}))
+        self.assertAlmostEqual(elo.loc["G001", "elo_home"], 1490.0)
+
+    def test_regression_applies_at_a_new_season(self):
+        logs = self.logs()
+        plain = pregame_elo(logs, 20)
+        regressed = pregame_elo(logs, 20, regression=0.25)
+        pd.testing.assert_frame_equal(plain.iloc[:4], regressed.iloc[:4])
+        self.assertLess(abs(regressed.loc["G004", "elo_home"] - 1500), abs(plain.loc["G004", "elo_home"] - 1500))
+
+    def test_variant_own_and_later_results_do_not_change_a_games_rating(self):
+        logs = self.logs()
+        base = pregame_elo(logs, 20, 50, 0.25, True)
+        for game in range(9):
+            changed = logs.copy()
+            later = changed["GAME_ID"].str[1:].astype(int) >= game
+            changed.loc[later, "WIN"] = 1 - changed.loc[later, "WIN"]
+            changed.loc[later, "PLUS_MINUS"] = -changed.loc[later, "PLUS_MINUS"] * 3
+            pd.testing.assert_frame_equal(base.iloc[: game + 1], pregame_elo(changed, 20, 50, 0.25, True).iloc[: game + 1])
+
+
+@unittest.skipIf(not GAME_LOGS_DB.exists() or not ROUND_ONE.exists(), "needs game logs and round 1 results")
+class RoundOneUnchangedTest(unittest.TestCase):
+    def test_default_elo_reproduces_the_committed_k_search(self):
+        games, _ = load_games(20)
+        train = games[games["split"] == "train"]
+        logs = team_games(load_game_logs())
+        _, losses = choose_k(logs, train["GAME_ID"].tolist(), train[TARGET].astype(int).to_numpy())
+        saved = json.loads(ROUND_ONE.read_text())["elo_k_log_loss"]
+        for k, loss in losses.items():
+            self.assertAlmostEqual(loss, saved[str(k)], places=9)
 
 
 if __name__ == "__main__":
