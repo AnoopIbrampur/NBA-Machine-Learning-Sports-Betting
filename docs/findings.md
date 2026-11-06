@@ -52,7 +52,8 @@ flags into a full fatigue and travel feature group, following parent paper 3 (Bo
 **Modified Implementation (§11): Elo helps, but the baseline still isn't beaten.** The official feature
 set stays pre-game window 20; these are labelled extensions, fixed in advance in `docs/enhanced-plan.md`.
 - **Best rows of ours.** The stack scores 0.6480 / 0.6888 on test and 0.6562 / 0.7132 on validation
-  (accuracy / AUC), with the lowest log loss of any model of ours in both.
+  (accuracy / AUC), the highest AUC of any model of ours on both splits. Repo + Elo has the lowest test
+  log loss (0.6290 vs 0.6292); the stack has the lowest on validation.
 - **No demonstrated gain over the baseline.** No row beats it on the same metric on both splits.
 - **Two gains over the official pre-game model.** The stack and repo + Elo beat it on AUC on both splits.
 - **Hypothesis 2 is half supported.** Elo is the strongest input, but schedule features rank below the
