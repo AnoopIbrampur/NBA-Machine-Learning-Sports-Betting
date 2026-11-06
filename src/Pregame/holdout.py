@@ -29,7 +29,7 @@ ROLL_FROM = "2025-12-01"  # the month before the holdout, so the next refit is 2
 def holdout_games(features, logs, split_ids):
     """Sited games after the split that have a result, labelled from the logs and in date order."""
     home = logs[logs["is_home"] & ~logs["neutral"]].set_index("GAME_ID")
-    away_wl = logs[~logs["is_home"]].set_index("GAME_ID")["WL"]
+    away_wl = logs[~logs["is_home"]].drop_duplicates("GAME_ID").set_index("GAME_ID")["WL"]
     out = features[(features["Date"] > SPLIT_END) & ~features["GAME_ID"].isin(set(split_ids))].copy()
     out = out[out["GAME_ID"].map(home["WL"]).notna() & out["GAME_ID"].map(away_wl).notna()]
     out[TARGET] = out["GAME_ID"].map(home["WIN"]).astype(int)
