@@ -30,10 +30,11 @@ def game_pairs(team_rows):
         raise ValueError("Every game needs exactly two team rows")
     first = rows.groupby("GAME_ID", sort=False).nth(0).set_index("GAME_ID")
     second = rows.groupby("GAME_ID", sort=False).nth(1).set_index("GAME_ID")
-    if (first["WIN"] + second["WIN"] != 1).any():
-        raise ValueError("Every game needs exactly one winner")
+    winners = first["WIN"] + second["WIN"]
+    if (winners > 1).any():
+        raise ValueError("A game cannot have two winners")
     return pd.DataFrame({"team_a": first["TEAM_ID"], "team_b": second["TEAM_ID"], "a_won": first["WIN"],
-                         "a_home": first["is_home"], "neutral": first["neutral"]})
+                         "a_home": first["is_home"], "neutral": first["neutral"], "played": winners == 1})
 
 
 def pregame_elo(team_rows, k):
@@ -45,6 +46,8 @@ def pregame_elo(team_rows, k):
         rating_b = ratings.get(game["team_b"], START_RATING)
         if game["a_home"] and not game["neutral"]:
             records.append((game_id, rating_a, rating_b, rating_a - rating_b))
+        if not game["played"]:  # logged with no result: 2013-04-16 BOS-IND, listed but never played
+            continue
         change = k * (game["a_won"] - expected_score(rating_a, rating_b))
         ratings[game["team_a"]] = rating_a + change
         ratings[game["team_b"]] = rating_b - change

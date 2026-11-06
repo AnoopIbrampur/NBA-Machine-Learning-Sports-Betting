@@ -65,6 +65,12 @@ class EloTest(unittest.TestCase):
         self.assertNotIn("G000", elo.index)
         self.assertAlmostEqual(elo.loc["G001", "elo_home"], 1490.0)
 
+    def test_a_game_with_no_result_does_not_move_ratings(self):
+        logs = schedule([1, 1, 1])
+        logs.loc[logs["GAME_ID"] == "G000", "WIN"] = 0.0
+        elo = pregame_elo(logs, 20)
+        self.assertEqual(elo.loc["G001", "elo_home"], START_RATING)
+
     def test_two_winners_are_rejected(self):
         logs = schedule([1])
         logs["WIN"] = 1.0

@@ -93,4 +93,7 @@ All rows, slices and comparisons above are reported, including nulls. Any new nu
 `docs/findings.md` from a committed result file.
 
 ## Deviations
-None yet.
+1. **Elo skips one logged game (changed before any result existed).** The logs list 2013-04-16 BOS vs
+   IND with no result and 0 points. The first run stopped on the code's one-winner check, before any
+   rating or model was produced. Elo now makes no update for that game. The game looks like the one
+   cancelled after the Boston Marathon bombing, but the repo can't confirm that.
