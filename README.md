@@ -12,7 +12,7 @@ strength and recent form, and where do they rank inside the model?
 
 **Short answer:** the back-to-back effect is real, but it adds no predictive value, and the betting
 market already prices it. Every result below comes from [docs/findings.md](docs/findings.md), the
-single source for this project's numbers. Paper details are checked against the papers.
+single source for this project's numbers. Bowman's figures are checked against the paper.
 
 ### Sources
 
