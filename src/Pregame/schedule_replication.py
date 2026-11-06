@@ -1,9 +1,10 @@
 """Replicate Bowman, Harmon & Ashman (JSA 2023) on our training-period seasons, plus raw b2b tables.
 
 Logistic regression of home win on Bowman's schedule variables, controlling for team strength.
-The primary control is team-by-season dummies for the home and the visiting team, as in the
-paper; a second fit controls for both teams' season-to-date win % instead (from the repo dataset,
-pre-game). Training-split games only. Games without a real home court are excluded: the 2019-20
+The primary control is team-by-season dummies for the home and the visiting team. Bowman's controls
+are dummies for the home and visiting teams, not by season (section 2.3, footnote 7), so ours are
+more detailed. A second fit controls for both teams' season-to-date win % instead (from the repo
+dataset, pre-game). Training-split games only. Games without a real home court are excluded: the 2019-20
 restart and the listed off-site games (neutral-site games are never in the split).
 """
 import json
@@ -45,6 +46,14 @@ def schedule_variables(games):
     }, index=games.index).astype(float)
 
 
+def bowman_week_restriction(X):
+    """Apply Bowman's Table 1 wording to the games-in-the-last-week variables (SFV13, SFV15): ">=3" and
+    ">=4 games in the last week (not a back-to-back game)". Sensitivity check only: the main
+    replication keeps its original, unrestricted variables."""
+    return X.assign(away_3plus_week=X["away_3plus_week"] * (1 - X["away_b2b"]),
+                    home_4plus_week=X["home_4plus_week"] * (1 - X["home_b2b"]))
+
+
 def team_season_dummies(games):
     """Home and visitor team-by-season dummies, minus the columns that are linear combinations of
     the rest and the intercept (one home dummy per season, one visitor dummy overall)."""
@@ -72,6 +81,42 @@ def odds_table(model, variables):
         "ci_high": np.exp(ci.loc[variables, 1]),
         "p_value": model.pvalues[variables],
     })
+
+
+def odds_cell(table, var):
+    row = table.loc[var]
+    return f"{row['odds_multiplier']:.3f} [{row['ci_low']:.3f}, {row['ci_high']:.3f}] (p={row['p_value']:.3f})"
+
+
+def week_restriction_sensitivity(y, X, dummies, strength, main_tables):
+    """Refit both models with the Bowman restriction and write them to their own files."""
+    restricted = bowman_week_restriction(X)
+    variables, fits, tables = list(BOWMAN), {}, {}
+    for name, controls in [("team_season_dummies", dummies), ("season_to_date_win_pct", strength)]:
+        model, fits[name] = fit(y, pd.concat([restricted, controls], axis=1))
+        tables[name] = odds_table(model, variables)
+    (SCHEDULE_RESULTS_DIR / "replication_week_restriction.json").write_text(json.dumps({
+        "n_games": int(len(y)), "fits": fits,
+        "games_with": {var: int(restricted[var].sum()) for var in variables},
+        "odds": {k: t.to_dict(orient="index") for k, t in tables.items()},
+    }, indent=2, default=float))
+    rows = [f"| {label} | {int(X[var].sum())} | {int(restricted[var].sum())} | {bowman or 'not different from 2 days'} | "
+            f"{odds_cell(main_tables['team_season_dummies'], var)} | {odds_cell(tables['team_season_dummies'], var)} | "
+            f"{odds_cell(tables['season_to_date_win_pct'], var)} |" for var, (label, bowman) in BOWMAN.items()]
+    text = "\n".join([
+        "# Sensitivity check: Bowman's 'not a back-to-back game' restriction", "",
+        "Labelled sensitivity check; `replication.md` keeps the main coefficients unchanged. Bowman's Table 1 "
+        "defines SFV13 and SFV15 as >=3 / >=4 games in the last week (not a back-to-back game). The main "
+        f"replication does not apply that restriction; this refit does. Same {len(y):,} games and same controls. "
+        "Odds multipliers for a home win, 95% Wald CIs.", "",
+        "Fit diagnostics: " + "; ".join(f"{k}: converged={d['converged']}, rank {d['rank']}/{d['n_columns']}, "
+                                        f"max SE {d['max_se']:.2f}" for k, d in fits.items()) + ".", "",
+        "| Variable | Games, main | Games, restricted | Bowman et al. | Main: team-by-season dummies | "
+        "Restricted: team-by-season dummies | Restricted: season-to-date win % control |",
+        "|---|---|---|---|---|---|---|", *rows,
+    ]) + "\n"
+    (SCHEDULE_RESULTS_DIR / "replication_week_restriction.md").write_text(text)
+    print(text)
 
 
 def situation(games):
@@ -162,6 +207,7 @@ def main():
     text = "\n".join(report) + "\n"
     (SCHEDULE_RESULTS_DIR / "replication.md").write_text(text)
     print(text)
+    week_restriction_sensitivity(y, X, dummies, strength, tables)
 
 
 if __name__ == "__main__":
