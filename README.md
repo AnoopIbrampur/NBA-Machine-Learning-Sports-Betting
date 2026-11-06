@@ -140,7 +140,7 @@ for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
 .venv/bin/python -m src.Pregame.calibration
 .venv/bin/python -m src.Pregame.enhanced2
 .venv/bin/python -m src.Pregame.holdout
-.venv/bin/python -m unittest discover -s Tests -t .   # expect 104 tests, 0 skipped
+.venv/bin/python -m unittest discover -s Tests -t .   # expect 108 tests, 0 skipped
 ```
 
 - **Runtime:** about 30 minutes for the pipeline, from one clean-clone run on Nov 6, 2026 using an
@@ -150,9 +150,19 @@ for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
   and player logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
   on every endpoint. If it is down, `game_logs` and every step after it cannot run. The committed
   results below stay readable.
-- **Tests before the pipeline:** on a fresh clone, 7 of the 104 tests skip until the logs and features exist.
+- **Tests before the pipeline:** on a fresh clone, 7 of the 108 tests skip until the logs and features exist.
 - **Already applied, do not rerun:** `scripts/fix_game_results.py` repaired the committed data and
   rewrites tracked database files.
+
+### Demo
+
+After the Reproduce steps, this shows saved models' predictions for one date, with the top reasons and
+the actual winner. It trains nothing, and it labels whether the model trained on each game.
+
+```bash
+.venv/bin/python -m src.Pregame.demo --date 2026-03-15
+.venv/bin/python -m src.Pregame.demo --date 2026-03-15 --team Lakers --reasons 5
+```
 
 ### Where results live
 
