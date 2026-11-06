@@ -21,7 +21,9 @@ playing a back-to-back raised the home team's odds of winning by a factor of 1.3
 0.7255), and once that line was controlled for, back-to-back situations added no significant
 information. A leakage-free Elo rating became the strongest input. A stacked model with Elo and player
 features reached test accuracy 0.6474 and AUC 0.6935, beating the season-to-date baseline on AUC, but not
-accuracy, on both held-out periods. Our pre-specified primary model narrowly missed that test.
+accuracy, on both held-out periods. Our pre-specified primary model narrowly missed that test, but it
+beat our official pre-game model on 766 later games scored once (accuracy 0.7076 vs 0.6749, AUC 0.7632
+vs 0.7393).
 We conclude that fatigue affects results, but that its effect is already reflected in
 rest-day features and in market prices.
 

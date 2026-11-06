@@ -119,3 +119,7 @@ If approved, the holdout would get a single look at `pregame`, `pregame_elo2_pla
 ## Deviations
 None to the analysis. One fact checked after this plan was committed and before any model ran: the
 dataset, odds and team snapshots all stop at 2026-01-07, so a holdout could use log-based rows only.
+
+Holdout: the first dry run stopped on a selection bug in neutral-site rows, before anything was scored, and
+was fixed. 766 games have a home side, not 768. The scoring run happened at commit 0161e22. It was repeated
+once to confirm identical output, with no change to any model, feature or row.

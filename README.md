@@ -68,6 +68,9 @@ findings §11 and §12). Round 2 wasn't blind, because round 1 motivated it.
   both splits (secondary rows). No row beats it on accuracy.
 - **Rolling retraining:** no demonstrated gain.
 - **Market:** still significantly ahead on AUC.
+- **Fresh holdout, 766 games after the split, rules fixed before scoring:** the primary row beats the
+  official pre-game model (accuracy 0.7076 vs 0.6749, AUC 0.7632 vs 0.7393, both CIs exclude zero). The
+  baseline and market can't be scored there, because their data stops at 2026-01-07.
 
 ### Comparison with Bowman et al.: a partial match
 
@@ -136,17 +139,18 @@ for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
 .venv/bin/python -m src.Pregame.enhanced
 .venv/bin/python -m src.Pregame.calibration
 .venv/bin/python -m src.Pregame.enhanced2
-.venv/bin/python -m unittest discover -s Tests -t .   # expect 103 tests, 0 skipped
+.venv/bin/python -m src.Pregame.holdout
+.venv/bin/python -m unittest discover -s Tests -t .   # expect 104 tests, 0 skipped
 ```
 
-- **Runtime:** about 15 minutes in total, from one clean-clone run on Nov 6, 2026, covering a fresh
-  venv, a fresh game-log download and a full retrain. That run matched the committed numbers in the
-  main result JSONs exactly.
+- **Runtime:** about 30 minutes for the pipeline, from one clean-clone run on Nov 6, 2026 using an
+  already-installed pinned environment, so a fresh venv adds a little more. That run reproduced the
+  committed `.md` and `.csv` results exactly, and the JSONs to within 7e-16.
 - **stats.nba.com dependency:** `Data/pregame/` is not in git, so a clean clone has to download the game
-  logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
+  and player logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
   on every endpoint. If it is down, `game_logs` and every step after it cannot run. The committed
   results below stay readable.
-- **Tests before the pipeline:** on a fresh clone, 7 of the 103 tests skip until the logs and features exist.
+- **Tests before the pipeline:** on a fresh clone, 7 of the 104 tests skip until the logs and features exist.
 - **Already applied, do not rerun:** `scripts/fix_game_results.py` repaired the committed data and
   rewrites tracked database files.
 

@@ -59,6 +59,8 @@ Round 2 (§12) is the latest result, and it wasn't blind, because round 1 motiva
   rolling stack 2. No row beats it on accuracy on either split.
 - **Rolling retraining shows no demonstrated gain.**
 - **The market stays ahead on AUC** on both splits.
+- **Confirmed on 766 unseen games (§12e).** The primary row beats the official pre-game model on AUC
+  (0.7632 vs 0.7393) and accuracy (0.7076 vs 0.6749). The baseline and market can't be scored there.
 
 Round 1 (§11):
 - **Best rows of ours.** The stack scores 0.6480 / 0.6888 on test and 0.6562 / 0.7132 on validation
@@ -1258,11 +1260,35 @@ AUC difference CIs against the baseline (all comparisons are in `metrics_w20.md`
 - **A second stats.nba.com dependency:** a clean clone also has to download the player logs.
 - **Calibration wasn't part of this plan,** so §11e covers round 1 rows only.
 
-### 12e. Untouched games
+### 12e. Fresh holdout: 766 unseen games
 
-The game logs hold 768 games after 2026-01-07 that no analysis has scored. `dataset_2012-26`, the odds
-and the team snapshots all stop at 2026-01-07, so a comparison there could use log-based rows only: no
-baseline and no market. It hasn't been run, and needs a team decision (`docs/enhanced-plan-2.md`).
+The game logs run past the split, to 2026-06-13. Those games had never been scored, and their rules were
+committed before any score existed (`docs/enhanced-plan-2.md`). This is the strongest evidence in this
+report, because no model, feature or choice was made after seeing these games.
+
+Source: `results/pregame/enhanced2/holdout.md`. 766 games, 2026-01-08 to 2026-06-13, home-win rate 0.5561.
+Two of the 768 logged games were neutral-site and have no home side.
+
+| Row | Accuracy | AUC | Log loss | Brier |
+|---|---|---|---|---|
+| Pre-game w20 (official) | 0.6749 | 0.7393 | 0.6083 | 0.2096 |
+| **Pre-game + Elo variant + player** | 0.7076 | 0.7632 | 0.5836 | 0.1988 |
+| Rolling primary | 0.6997 | 0.7644 | 0.5819 | 0.1981 |
+
+| Row | Reference | Accuracy diff CI | AUC diff CI |
+|---|---|---|---|
+| **Primary** | Official pre-game | **[+0.0065, +0.0587]** | **[+0.0054, +0.0420]** |
+| Rolling primary | Official pre-game | [−0.0013, +0.0509] | **[+0.0075, +0.0429]** |
+| Rolling primary | Primary | [−0.0196, +0.0039] | [−0.0028, +0.0051] |
+
+- **The main question is confirmed.** The primary row beats the official pre-game model on AUC, and
+  on accuracy too. This is the one confirmatory comparison.
+- **Rolling retraining still adds nothing demonstrable,** matching §12b.
+- **This doesn't show the baseline or market were beaten.** Their data stops at 2026-01-07, so neither is
+  here.
+- **Don't compare these scores with test or validation.** Every row scores higher here, including the
+  official model, so this period looks easier. Differences between rows are the meaningful part.
+- **It doesn't separate Elo from player data.** The confirmed gain is for both added together.
 
 ## Reproduce
 
@@ -1293,5 +1319,6 @@ for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
 # Modified Implementation, round 2 (§12)
 .venv/bin/python -m src.Pregame.player_logs            # download player logs (cached)
 .venv/bin/python -m src.Pregame.enhanced2
+.venv/bin/python -m src.Pregame.holdout                # fresh holdout, §12e
 .venv/bin/python -m unittest discover -s Tests -t .    # all tests again: none skip now
 ```
