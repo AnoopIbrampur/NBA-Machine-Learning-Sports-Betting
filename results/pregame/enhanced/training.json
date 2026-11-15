@@ -1,0 +1,124 @@
+{
+  "elo_k": 28,
+  "elo_k_log_loss": {
+    "16": 0.6244226525192401,
+    "20": 0.6226503698018373,
+    "24": 0.6219542489626548,
+    "28": 0.62185706253958,
+    "32": 0.6221202120661309
+  },
+  "pregame_elo": {
+    "n_features": 22,
+    "n_train": 11873,
+    "cv_log_loss": 0.621134230587914,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.008811865890264378,
+      "subsample": 0.5577450318326775,
+      "colsample_bytree": 0.51057400816822,
+      "min_child_weight": 6,
+      "gamma": 0.27697704582130056,
+      "lambda": 0.2235027864198878,
+      "alpha": 0.01393401375565703
+    },
+    "num_boost_round": 388
+  },
+  "repo_elo": {
+    "n_features": 109,
+    "n_train": 11873,
+    "cv_log_loss": 0.6194689719038436,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 2,
+      "eta": 0.016036415432556204,
+      "subsample": 0.886006216055494,
+      "colsample_bytree": 0.8308306315838805,
+      "min_child_weight": 11,
+      "gamma": 1.8682886443685502,
+      "lambda": 0.15450172623456146,
+      "alpha": 1.0364843776014911
+    },
+    "num_boost_round": 328
+  },
+  "pregame_sched_travel_elo": {
+    "n_features": 43,
+    "n_train": 11873,
+    "cv_log_loss": 0.6208874087897482,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.012474520251717417,
+      "subsample": 0.6183311814987906,
+      "colsample_bytree": 0.8730071401217232,
+      "min_child_weight": 10,
+      "gamma": 4.082843817119552,
+      "lambda": 0.16238883259765097,
+      "alpha": 0.015123083791948117
+    },
+    "num_boost_round": 260
+  },
+  "pregame_w5": {
+    "n_features": 19,
+    "n_train": 11873,
+    "cv_log_loss": 0.6499533420935257,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.012474520251717417,
+      "subsample": 0.6183311814987906,
+      "colsample_bytree": 0.8730071401217232,
+      "min_child_weight": 10,
+      "gamma": 4.082843817119552,
+      "lambda": 0.16238883259765097,
+      "alpha": 0.015123083791948117
+    },
+    "num_boost_round": 327
+  },
+  "pregame_w7": {
+    "n_features": 19,
+    "n_train": 11873,
+    "cv_log_loss": 0.6439778396729812,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.026234578355082843,
+      "subsample": 0.6361207809225795,
+      "colsample_bytree": 0.5481954810767496,
+      "min_child_weight": 15,
+      "gamma": 4.513011982719208,
+      "lambda": 0.8157415422961871,
+      "alpha": 0.035170022937479034
+    },
+    "num_boost_round": 150
+  },
+  "stack": {
+    "members": [
+      "repo",
+      "pregame",
+      "pregame_elo"
+    ],
+    "n_meta_rows": 9890,
+    "intercept": -0.07280257271045104,
+    "coefficients": {
+      "repo": 0.4853286362428067,
+      "pregame": -0.19120857433081426,
+      "pregame_elo": 0.7693752876804669
+    }
+  }
+}

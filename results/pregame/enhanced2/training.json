@@ -1,0 +1,131 @@
+{
+  "elo_variant": {
+    "k": 16,
+    "home_advantage": 100.0,
+    "regression": 0.3333333333333333,
+    "margin": true,
+    "log_loss": 0.6193455724752924
+  },
+  "replacement_level": 9.114310725820456,
+  "elo_grid_top5": [
+    {
+      "setting": [
+        16,
+        100.0,
+        0.3333333333333333,
+        true
+      ],
+      "log_loss": 0.6193455724752924
+    },
+    {
+      "setting": [
+        16,
+        100.0,
+        0.25,
+        true
+      ],
+      "log_loss": 0.6193569671596846
+    },
+    {
+      "setting": [
+        16,
+        50.0,
+        0.25,
+        true
+      ],
+      "log_loss": 0.6196501243080338
+    },
+    {
+      "setting": [
+        16,
+        50.0,
+        0.3333333333333333,
+        true
+      ],
+      "log_loss": 0.6196563734575417
+    },
+    {
+      "setting": [
+        16,
+        100.0,
+        0.0,
+        true
+      ],
+      "log_loss": 0.620029496594396
+    }
+  ],
+  "pregame_elo2": {
+    "n_features": 22,
+    "n_train": 11873,
+    "cv_log_loss": 0.6198313003807084,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 2,
+      "eta": 0.051978869604304805,
+      "subsample": 0.7767897003289979,
+      "colsample_bytree": 0.7796035803727068,
+      "min_child_weight": 16,
+      "gamma": 1.519750490313061,
+      "lambda": 0.11524860283967088,
+      "alpha": 0.15089926829755462
+    },
+    "num_boost_round": 82
+  },
+  "pregame_elo2_player": {
+    "n_features": 32,
+    "n_train": 11873,
+    "cv_log_loss": 0.6170395909722883,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 2,
+      "eta": 0.051978869604304805,
+      "subsample": 0.7767897003289979,
+      "colsample_bytree": 0.7796035803727068,
+      "min_child_weight": 16,
+      "gamma": 1.519750490313061,
+      "lambda": 0.11524860283967088,
+      "alpha": 0.15089926829755462
+    },
+    "num_boost_round": 75
+  },
+  "repo_elo2_player": {
+    "n_features": 119,
+    "n_train": 11873,
+    "cv_log_loss": 0.615721565975428,
+    "params": {
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "tree_method": "hist",
+      "seed": 42,
+      "max_depth": 3,
+      "eta": 0.008811865890264378,
+      "subsample": 0.5577450318326775,
+      "colsample_bytree": 0.51057400816822,
+      "min_child_weight": 6,
+      "gamma": 0.27697704582130056,
+      "lambda": 0.2235027864198878,
+      "alpha": 0.01393401375565703
+    },
+    "num_boost_round": 373
+  },
+  "stack2": {
+    "members": [
+      "repo",
+      "pregame",
+      "pregame_elo2_player"
+    ],
+    "n_meta_rows": 9890,
+    "intercept": -0.06171249404170136,
+    "coefficients": {
+      "repo": 0.38284671701818057,
+      "pregame": -0.11246767953717238,
+      "pregame_elo2_player": 0.7831154730582323
+    }
+  }
+}

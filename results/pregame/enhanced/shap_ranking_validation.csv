@@ -1,0 +1,44 @@
+feature,mean_abs_shap,group
+elo_diff,0.47315586,Elo
+elo_home,0.08049473,Elo
+2P%_diff,0.061122537,Box-score stats
+home_win_pct_at_home,0.04397455,Win record
+elo_away,0.03370919,Elo
+FG%_diff,0.028637214,Box-score stats
+STL_diff,0.020165965,Box-score stats
+DRB_diff,0.017936995,Box-score stats
+travel_km_away,0.016204206,Schedule
+rest_days_away,0.0155513305,Schedule
+rest_diff,0.01544301,Schedule
+BLK_diff,0.014021299,Box-score stats
+away_win_pct_on_road,0.013870691,Win record
+AST_diff,0.011433067,Box-score stats
+b2b_prev_away_away,0.011067617,Schedule
+TOV_diff,0.010510823,Box-score stats
+PF_diff,0.00904923,Box-score stats
+win_pct_home,0.008888536,Win record
+games_last7_away,0.008619844,Schedule
+3P%_diff,0.007840646,Box-score stats
+FT%_diff,0.0067675356,Box-score stats
+win_pct_away,0.0060866326,Win record
+ORB_diff,0.004502703,Box-score stats
+consec_away_away,0.0035619824,Schedule
+three_in_four_away,0.0034979112,Schedule
+games_last7_home,0.0033352526,Schedule
+travel_km_home,0.0029664533,Schedule
+b2b_away,0.001944568,Schedule
+consec_away_home,0.0017984906,Schedule
+rest_days_home,0.0007987872,Schedule
+first_leg_b2b_away,0.0004926259,Schedule
+first_leg_b2b_home,0.00047379412,Schedule
+b2b_prev_away_home,0.00044647828,Schedule
+tz_shift_home,0.00028951775,Schedule
+tz_shift_away,0.00022649723,Schedule
+home_east_b2b,0.00012861191,Schedule
+rest_bucket_home,0.0,Schedule
+rest_bucket_away,0.0,Schedule
+three_in_four_home,0.0,Schedule
+jet_lag_home,0.0,Schedule
+jet_lag_away,0.0,Schedule
+visitor_long_trip,0.0,Schedule
+b2b_home,0.0,Schedule

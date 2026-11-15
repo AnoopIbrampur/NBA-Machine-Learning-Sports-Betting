@@ -48,6 +48,30 @@ Test n = 3,386; validation n = 1,681.
   controlled for, no back-to-back situation's odds multiplier differs from 1 in train, test or
   validation. Whether it is a closing line can't be confirmed from this repo.
 
+**Modified Implementation** (labelled extensions, plans fixed in advance in
+[docs/enhanced-plan.md](docs/enhanced-plan.md) and [docs/enhanced-plan-2.md](docs/enhanced-plan-2.md);
+findings §11 and §12). Round 2 wasn't blind, because round 1 motivated it.
+
+| Row | Test acc | Test AUC | Validation acc | Validation AUC |
+|---|---|---|---|---|
+| Elo only (logistic on rating difference) | 0.6364 | 0.6793 | 0.6449 | 0.7008 |
+| Pre-game w20 + Elo | 0.6491 | 0.6875 | 0.6478 | 0.7084 |
+| Stack: baseline, pre-game, pre-game + Elo | 0.6480 | 0.6888 | 0.6562 | 0.7132 |
+| Primary, round 2: pre-game + Elo variant + player data | 0.6456 | 0.6918 | 0.6615 | 0.7206 |
+| Stack 2: baseline, pre-game, primary | 0.6474 | 0.6935 | 0.6663 | 0.7220 |
+
+- **Elo:** the strongest input by SHAP, but schedule features rank below the middle, so midterm
+  hypothesis 2 is half supported.
+- **Primary test, round 2: not met.** The primary row beats the baseline on test AUC, but its validation
+  interval just includes zero.
+- **Against the baseline:** stack 2, repo + Elo variant + player, and rolling stack 2 beat it on AUC on
+  both splits (secondary rows). No row beats it on accuracy.
+- **Rolling retraining:** no demonstrated gain.
+- **Market:** still significantly ahead on AUC.
+- **Fresh holdout, 766 games after the split, rules fixed before scoring:** the primary row beats the
+  official pre-game model (accuracy 0.7076 vs 0.6749, AUC 0.7632 vs 0.7393, both CIs exclude zero). The
+  baseline and market can't be scored there, because their data stops at 2026-01-07.
+
 ### Comparison with Bowman et al.: a partial match
 
 Odds multipliers for a home win (above 1 favours the home team), reference rest 2 days.
@@ -96,7 +120,7 @@ python3.13 -m venv .venv && .venv/bin/pip install -r requirements-research.txt
 
 ```bash
 .venv/bin/python -m src.Pregame.game_logs             # download game logs from stats.nba.com
-.venv/bin/python -m unittest discover -s Tests -t .   # expect 64 tests, 0 skipped
+.venv/bin/python -m src.Pregame.player_logs           # download player logs from stats.nba.com
 for w in 10 20; do
   .venv/bin/python -m src.Pregame.features --window $w
   .venv/bin/python -m src.Pregame.train_xgb --window $w
@@ -111,18 +135,35 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 .venv/bin/python -m src.Pregame.schedule_shap
 # Betting market (window 20 only)
 .venv/bin/python -m src.Pregame.market_analysis
+# Modified Implementation
+for w in 5 7; do .venv/bin/python -m src.Pregame.features --window $w; done
+.venv/bin/python -m src.Pregame.enhanced
+.venv/bin/python -m src.Pregame.calibration
+.venv/bin/python -m src.Pregame.enhanced2
+.venv/bin/python -m src.Pregame.holdout
+.venv/bin/python -m unittest discover -s Tests -t .   # expect 108 tests, 0 skipped
 ```
 
-- **Runtime:** about 15 minutes in total, from one clean-clone run on Nov 6, 2026, covering a fresh
-  venv, a fresh game-log download and a full retrain. That run matched the committed numbers in the
-  main result JSONs exactly.
+- **Runtime:** about 30 minutes for the pipeline, from one clean-clone run on Nov 6, 2026 using an
+  already-installed pinned environment, so a fresh venv adds a little more. That run reproduced the
+  committed `.md` and `.csv` results exactly, and the JSONs to within 7e-16.
 - **stats.nba.com dependency:** `Data/pregame/` is not in git, so a clean clone has to download the game
-  logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
+  and player logs. The site worked on Nov 6, 2026, but on Oct 8, 2026 it returned an HTML page instead of JSON
   on every endpoint. If it is down, `game_logs` and every step after it cannot run. The committed
   results below stay readable.
-- **Tests before the download:** without the game logs, 4 of the 64 tests skip.
+- **Tests before the pipeline:** on a fresh clone, 7 of the 108 tests skip until the logs and features exist.
 - **Already applied, do not rerun:** `scripts/fix_game_results.py` repaired the committed data and
   rewrites tracked database files.
+
+### Demo
+
+After the Reproduce steps, this shows saved models' predictions for one date, with the top reasons and
+the actual winner. It trains nothing, and it labels whether the model trained on each game.
+
+```bash
+.venv/bin/python -m src.Pregame.demo --date 2026-03-15
+.venv/bin/python -m src.Pregame.demo --date 2026-03-15 --team Thunder --reasons 5
+```
 
 ### Where results live
 
@@ -132,6 +173,8 @@ for w in 10 20; do .venv/bin/python -m src.Pregame.train_xgb --window $w --resco
 | `results/pregame/` | Main metrics, bootstrap CIs (`leakage_audit.md`), SHAP |
 | `results/pregame/schedule/` | Schedule models, slices, Bowman comparison (`replication.md`) and its sensitivity check (`replication_week_restriction.md`) |
 | `results/pregame/market/` | Market benchmark and back-to-back tests |
+| `results/pregame/enhanced/` | Round 1: Elo, stacking, window ablations, SHAP for hypothesis 2, calibration |
+| `results/pregame/enhanced2/` | Round 2: Elo variant, player data, rolling retraining |
 | `results/pregame/pre_fix/`, `pre_label_fix/`, `shap_superseded_n3390/` | Superseded results, kept for the record |
 | `docs/report/` | Report drafts |
 
