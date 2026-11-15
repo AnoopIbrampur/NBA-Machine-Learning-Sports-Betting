@@ -173,7 +173,7 @@ def main():
     for title, note, (head, body) in sections:
         md += [f"## {title}", ""] + ([note, ""] if note else []) + [md_table(head, body), ""]
     md += ["## Market line (reference only)", ""] + [f"- {line}" for line in market_notes()] + [
-        "", "Whether the market line is a closing line can't be confirmed from this repo.", ""]
+        "", "Whether this market line is a closing line can't be confirmed from this repo.", ""]
     OUT_MD.write_text("\n".join(md))
 
     style = ("body{font-family:'Times New Roman',serif;font-size:10pt}table{border-collapse:collapse;margin:12pt 0}"

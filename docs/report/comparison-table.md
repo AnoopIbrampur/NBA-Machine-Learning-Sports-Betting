@@ -95,4 +95,4 @@ The one confirmatory comparison fixed before scoring: primary − official on AU
 - market − stack: AUC [+0.0263, +0.0479] test, [+0.0153, +0.0426] validation; accuracy [+0.0174, +0.0455] test, [+0.0077, +0.0422] validation.
 - market − stack 2: AUC [+0.0225, +0.0418] test, [+0.0070, +0.0334] validation; accuracy [+0.0189, +0.0452] test, [−0.0018, +0.0327] validation.
 
-Whether the market line is a closing line can't be confirmed from this repo.
+Whether this market line is a closing line can't be confirmed from this repo.

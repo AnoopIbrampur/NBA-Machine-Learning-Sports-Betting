@@ -1,8 +1,8 @@
 # Recording outline: Modified Implementation (team discussion, about 10 minutes)
 
 These are talking points, not a script. Every number below is in `docs/report/comparison-table.md`
-(generated from `results/pregame/enhanced*/`) or `docs/findings.md` §11–§12. Say "a market line",
-never "the closing line". Say "partly replicated" for Bowman, never "replicated".
+(generated from `results/pregame/enhanced*/`) or `docs/findings.md` §11–§12. Call the betting
+benchmark "a market line". For Bowman, say "partly replicated".
 
 ## Before recording
 - Use the main working copy. Its game logs, player logs and saved models are already cached, so the
@@ -59,7 +59,7 @@ Run live, then open the output:
 
 - **Speaker 2, Table A:** Elo alone matches the baseline's test AUC, 0.6793, with one feature. The
   round 2 primary row is 0.6918 test and 0.7206 validation AUC, against 0.6793 and 0.7089 for the
-  baseline. The market line is still on top at 0.7255 and 0.7420.
+  baseline. A market line is still on top at 0.7255 and 0.7420.
 - **Speaker 1, Table B (against the baseline):**
   - No row beats the baseline on accuracy on either split.
   - The primary row passes on test AUC but not validation, [−0.0008, +0.0237]. **The primary test was
